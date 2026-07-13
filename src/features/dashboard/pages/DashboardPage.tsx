@@ -1,5 +1,3 @@
-import React from "react"
-import { ArrowRightIcon, ClipboardCheckIcon, MessageSquareTextIcon } from "lucide-react"
 import { AIRecommendation } from "../components/AIRecommendation"
 import { PageHeader } from "../../../components/common/PageHeader"
 import { ContentComposer } from "../../content/components/ContentComposer"

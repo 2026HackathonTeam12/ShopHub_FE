@@ -1,290 +1,440 @@
-import { useState, type FormEvent } from 'react'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
-import type { StoreProfile } from '../../../data/store'
+import React, { useMemo, useState, type FormEvent } from "react"
+import {
+    ArrowLeftIcon,
+    ArrowRightIcon,
+    CheckIcon,
+    Clock3Icon,
+    MapPinIcon,
+    PhoneIcon,
+    SparklesIcon,
+    StoreIcon,
+} from "lucide-react"
+import type { StoreProfile } from "../../../data/store"
 
 type StoreOnboardingProps = {
-  initialStep?: number
-  onComplete: (store: StoreProfile) => void
-  onCancel?: () => void
+    initialStep?: 1 | 2 | 3
+    onComplete: (store: StoreProfile) => void
+    onCancel?: () => void
 }
-
 type StoreForm = {
-  name: string
-  category: string
-  neighborhood: string
-  address: string
-  phone: string
-  hours: string
-  menu: string
-  tone: string
+    name: string
+    category: string
+    neighborhood: string
+    address: string
+    phone: string
+    hours: string
+    menu: string
+    tone: string
 }
-
-const steps = ['기본 정보', '운영 상세', 'AI 맥락 설정']
-const accentOptions = ['bg-[#ebd7cd]', 'bg-[#b9d9cf]', 'bg-[#cbdcf6]', 'bg-[#e9e2d5]']
-
+type FieldErrors = Partial<Record<keyof StoreForm, string>>
+const tones = ["따뜻하고 담백한", "경쾌하고 친근한", "전문적이고 신뢰감 있는", "정갈하고 차분한"]
+const accentOptions = ["bg-[#e9c7a7]", "bg-[#b9d9cf]", "bg-[#efd59d]", "bg-[#d7c5ea]"]
 export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: StoreOnboardingProps) {
-  const [step, setStep] = useState(initialStep)
-  const [isCreating, setIsCreating] = useState(false)
-  const [form, setForm] = useState<StoreForm>({
-    name: '',
-    category: '카페 · 디저트',
-    neighborhood: '',
-    address: '',
-    phone: '',
-    hours: '',
-    menu: '',
-    tone: '따뜻하고 담백한 동네 카페의 말투',
-  })
-  const [errors, setErrors] = useState<Partial<StoreForm>>({})
-
-  const validate = (currentStep: number) => {
-    const nextErrors: Partial<StoreForm> = {}
-    if (currentStep === 1) {
-      if (!form.name.trim()) nextErrors.name = '가게 이름을 입력해 주세요.'
-      if (!form.neighborhood.trim()) nextErrors.neighborhood = '지역(시/구/동)을 입력해 주세요.'
+    const [step, setStep] = useState(initialStep)
+    const [isCreating, setIsCreating] = useState(false)
+    const [createdStore, setCreatedStore] = useState<StoreProfile | null>(null)
+    const [errors, setErrors] = useState<FieldErrors>({})
+    const [form, setForm] = useState<StoreForm>({
+        name: "",
+        category: "카페 · 디저트",
+        neighborhood: "",
+        address: "",
+        phone: "",
+        hours: "매일 10:00 - 20:00",
+        menu: "",
+        tone: tones[0],
+    })
+    const steps = useMemo(() => ["기본 정보", "운영 정보", "확인"], [])
+    const update = (key: keyof StoreForm, value: string) => {
+        setForm((current) => ({
+            ...current,
+            [key]: value,
+        }))
+        setErrors((current) => ({
+            ...current,
+            [key]: undefined,
+        }))
     }
-    if (currentStep === 2) {
-      if (!form.address.trim()) nextErrors.address = '상세 주소를 입력해 주세요.'
+    const validate = (currentStep: number) => {
+        const nextErrors: FieldErrors = {}
+        if (currentStep === 1) {
+            if (form.name.trim().length < 2) nextErrors.name = "가게 이름을 2자 이상 입력해 주세요."
+            if (!form.neighborhood.trim()) nextErrors.neighborhood = "가게가 있는 동네를 입력해 주세요."
+            if (!form.address.trim()) nextErrors.address = "고객이 찾을 수 있는 주소를 입력해 주세요."
+        }
+        if (currentStep === 2) {
+            if (!/^[0-9-]{9,14}$/.test(form.phone.replace(/\s/g, "")))
+                nextErrors.phone = "대표 전화번호를 확인해 주세요."
+            if (!form.hours.trim()) nextErrors.hours = "기본 영업시간을 입력해 주세요."
+            if (!form.menu.trim()) nextErrors.menu = "대표 메뉴 또는 서비스를 하나 이상 입력해 주세요."
+        }
+        setErrors(nextErrors)
+        return Object.keys(nextErrors).length === 0
     }
-    setErrors(nextErrors)
-    return Object.keys(nextErrors).length === 0
-  }
+    const next = () => {
+        if (!validate(step)) return
 
-  const next = () => {
-    if (!validate(step)) return
-    setStep((current) => Math.min(current + 1, 3))
-  }
+        setStep((current) => Math.max(current - 1, 1) as 1 | 2 | 3)
+    }
+    const createStore = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!validate(2)) {
+            setStep(2)
+            return
+        }
+        setIsCreating(true)
+        window.setTimeout(() => {
+            const cleanName = form.name.trim()
+            const initials = cleanName.slice(0, 2).toUpperCase()
+            const id = `${cleanName.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`
+            setCreatedStore({
+                id,
+                name: cleanName,
+                neighborhood: form.neighborhood.trim(),
+                address: form.address.trim(),
+                initials,
+                accent: accentOptions[Math.floor(Math.random() * accentOptions.length)],
+                description: `${form.neighborhood.trim()}의 ${form.category}입니다.`,
+                menu: form.menu
+                    .split(",")
+                    .map((item) => item.trim())
+                    .filter(Boolean),
+                tone: form.tone,
+                reviewCount: 0,
+                category: form.category,
+                phone: form.phone.trim(),
+                hours: form.hours.trim(),
+            })
+            setIsCreating(false)
+        }, 700)
+    }
+    const inputClass = (key: keyof StoreForm) =>
+        `mt-1.5 w-full rounded-xl border bg-white px-3 py-3 text-sm text-[#172033] outline-none placeholder:text-slate-400 focus:border-[#3dd7af] ${errors[key] ? "border-[#d6503b]" : "border-[#ded9cf]"}`
+    if (createdStore) {
+        return (
+            <main className="flex min-h-screen w-full items-center justify-center bg-[#f5f2eb] p-5">
+                <section className="w-full max-w-lg rounded-3xl border border-[#ded9cf] bg-white p-8 text-center shadow-[0_20px_55px_rgba(23,43,77,0.08)] sm:p-10">
+                    <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#eafaf5] text-[#168165]">
+                        <CheckIcon size={30} />
+                    </span>
+                    <p className="font-mono-label mt-6 text-[10px] tracking-[0.15em] text-[#64748b]">STORE READY</p>
+                    <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#172033]">
+                        가게 등록을 완료했어요.
+                    </h1>
+                    <p className="mt-3 text-sm leading-6 text-slate-500">
+                        <strong className="text-[#172033]">{createdStore.name}</strong>의 기본 정보를 저장했어요. 이제
+                        이 가게의 메뉴와 말투를 담은 콘텐츠 초안을 바로 만들 수 있습니다.
+                    </p>
+                    <div className="mt-6 rounded-2xl bg-[#f0faf6] p-4 text-left">
+                        <p className="text-xs font-bold text-[#168165]">AI 초안에 반영되는 정보</p>
+                        <p className="mt-2 text-xs leading-5 text-[#42526e]">
+                            {createdStore.neighborhood} · {createdStore.menu.join(" · ")} · {createdStore.tone}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => onComplete(createdStore)}
+                        className="mt-7 inline-flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-5 py-3 text-sm font-bold text-white hover:bg-[#223b66]"
+                    >
+                        내 가게로 시작하기 <ArrowRightIcon size={17} />
+                    </button>
+                </section>
+            </main>
+        )
+    }
+    return (
+        <main className="min-h-screen w-full bg-[#f5f2eb] px-4 py-6 sm:px-6 sm:py-10">
+            <div className="mx-auto max-w-3xl">
+                <header className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#172b4d] text-[#3dd7af]">
+                            <StoreIcon size={18} />
+                        </span>
+                        <span className="text-lg font-extrabold tracking-tight text-[#172033]">ShopHub</span>
+                    </div>
+                    {onCancel && (
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-[#ebe7df]"
+                        >
+                            나중에 하기
+                        </button>
+                    )}
+                </header>
 
-  const prev = () => {
-    setStep((current) => Math.max(current - 1, 1))
-  }
+                <section className="mt-8 overflow-hidden rounded-3xl border border-[#ded9cf] bg-white shadow-[0_20px_55px_rgba(23,43,77,0.08)]">
+                    <div className="border-b border-[#eeeae2] bg-[#101a30] px-5 py-6 text-white sm:px-8">
+                        <p className="font-mono-label text-[10px] tracking-[0.15em] text-[#9edcc9]">STORE SETUP</p>
+                        <h1 className="mt-2 text-2xl font-extrabold tracking-tight">가게 정보를 등록해 주세요.</h1>
+                        <p className="mt-2 text-sm leading-6 text-[#c5d3eb]">
+                            입력한 정보는 콘텐츠 초안과 리뷰 응대의 기본 맥락으로 사용됩니다.
+                        </p>
+                    </div>
 
-  const createStore = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!validate(3)) return
-    setIsCreating(true)
-    window.setTimeout(() => {
-      const cleanName = form.name.trim()
-      const initials = cleanName.slice(0, 2).toUpperCase()
-      const id = `${cleanName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
-      onComplete({
-        id,
-        name: cleanName,
-        category: form.category,
-        neighborhood: form.neighborhood.trim(),
-        address: form.address.trim(),
-        phone: form.phone.trim(),
-        hours: form.hours.trim(),
-        initials,
-        accent: accentOptions[Math.floor(Math.random() * accentOptions.length)],
-        description: `${form.neighborhood.trim()}의 ${form.category}입니다.`,
-        menu: form.menu.split(',').map((item) => item.trim()).filter(Boolean),
-        tone: form.tone,
-        reviewCount: 0,
-      })
-      setIsCreating(false)
-    }, 700)
-  }
+                    <div className="border-b border-[#eeeae2] px-5 py-4 sm:px-8">
+                        <ol className="grid grid-cols-3 gap-2" aria-label="가게 등록 단계">
+                            {steps.map((label, index) => {
+                                const number = index + 1
+                                const active = step === number
+                                const complete = step > number
+                                return (
+                                    <li key={label} className="flex min-w-0 items-center gap-2">
+                                        <span
+                                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${complete ? "bg-[#3dd7af] text-[#10213b]" : active ? "bg-[#172b4d] text-white" : "bg-[#e9e5dc] text-slate-500"}`}
+                                        >
+                                            {complete ? <CheckIcon size={13} /> : number}
+                                        </span>
+                                        <span
+                                            className={`truncate text-xs font-bold ${active || complete ? "text-[#172033]" : "text-slate-400"}`}
+                                        >
+                                            {label}
+                                        </span>
+                                    </li>
+                                )
+                            })}
+                        </ol>
+                    </div>
 
-  const inputClass = (key: keyof StoreForm) =>
-    `mt-1.5 w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-[#172033] outline-none transition-colors focus:border-[#3dd7af] ${
-      errors[key] ? 'border-[#d6503b]' : 'border-[#ded9cf]'
-    }`
+                    <form onSubmit={createStore} noValidate className="p-5 sm:p-8">
+                        {step === 1 && (
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <StoreIcon size={18} className="text-[#42526e]" />
+                                    <div>
+                                        <h2 className="text-base font-bold text-[#172033]">어떤 가게인가요?</h2>
+                                        <p className="mt-0.5 text-xs text-slate-500">
+                                            고객에게 보이는 기본 정보를 먼저 알려주세요.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                                    <Field label="가게 이름" error={errors.name} className="sm:col-span-2">
+                                        <input
+                                            value={form.name}
+                                            onChange={(event) => update("name", event.target.value)}
+                                            className={inputClass("name")}
+                                            placeholder="예: 오월의 식탁"
+                                            autoFocus
+                                        />
+                                    </Field>
+                                    <Field label="업종" error={errors.category}>
+                                        <select
+                                            value={form.category}
+                                            onChange={(event) => update("category", event.target.value)}
+                                            className={inputClass("category")}
+                                        >
+                                            <option>카페 · 디저트</option>
+                                            <option>음식점 · 주점</option>
+                                            <option>뷰티 · 웰니스</option>
+                                            <option>소매 · 편집숍</option>
+                                            <option>생활 서비스</option>
+                                        </select>
+                                    </Field>
+                                    <Field label="동네" error={errors.neighborhood}>
+                                        <span className="relative mt-1.5 block">
+                                            <MapPinIcon
+                                                size={18}
+                                                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                                                aria-hidden="true"
+                                            />
+                                            <input
+                                                value={form.neighborhood}
+                                                onChange={(event) => update("neighborhood", event.target.value)}
+                                                className={`${inputClass("neighborhood")} pl-11`}
+                                                placeholder="예: 서울 용산구 한남동"
+                                            />
+                                        </span>
+                                    </Field>
+                                    <Field label="상세 주소" error={errors.address} className="sm:col-span-2">
+                                        <input
+                                            value={form.address}
+                                            onChange={(event) => update("address", event.target.value)}
+                                            className={inputClass("address")}
+                                            placeholder="예: 서울 용산구 이태원로 00, 1층"
+                                        />
+                                    </Field>
+                                </div>
+                            </div>
+                        )}
 
-  return (
-    <main className="h-screen w-full bg-[#f5f2eb] p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-      <div className="w-full max-w-3xl rounded-3xl border border-[#ded9cf] bg-white shadow-xl overflow-hidden">
-        <header className="border-b border-[#eeeae2] px-5 py-4 sm:px-8 bg-[#fcfbfa]">
-          <h1 className="text-base font-bold text-[#172033]">새 가게 워크스페이스 등록</h1>
-          <p className="mt-1 text-xs text-slate-500">
-            가게 기본 정보를 바탕으로 맞춤형 마케팅 글과 답변 가이드를 생성합니다.
-          </p>
-        </header>
-        <div className="border-b border-[#eeeae2] px-5 py-4 sm:px-8">
-          <ol className="grid grid-cols-3 gap-2" aria-label="가게 등록 단계">
-            {steps.map((label, index) => {
-              const number = index + 1
-              const active = step === number
-              const complete = step > number
-              return (
-                <li key={label} className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                      complete
-                        ? 'bg-[#3dd7af] text-[#10213b]'
-                        : active
-                        ? 'bg-[#172b4d] text-white'
-                        : 'bg-[#ebe7df] text-slate-400'
-                    }`}
-                  >
-                    {complete ? <Check size={12} strokeWidth={2.5} /> : number}
-                  </span>
-                  <span
-                    className={`truncate text-xs font-bold ${
-                      active ? 'text-[#172033]' : 'text-slate-400'
-                    }`}
-                  >
-                    {label}
-                  </span>
-                </li>
-              )
-            })}
-          </ol>
+                        {step === 2 && (
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <Clock3Icon size={18} className="text-[#42526e]" />
+                                    <div>
+                                        <h2 className="text-base font-bold text-[#172033]">
+                                            운영의 기준을 알려주세요.
+                                        </h2>
+                                        <p className="mt-0.5 text-xs text-slate-500">
+                                            바로 쓰기 좋은 콘텐츠 초안을 위해 필요한 정보예요.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                                    <Field label="대표 전화" error={errors.phone}>
+                                        <span className="relative mt-1.5 block">
+                                            <PhoneIcon
+                                                size={18}
+                                                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                                                aria-hidden="true"
+                                            />
+                                            <input
+                                                value={form.phone}
+                                                onChange={(event) => update("phone", event.target.value)}
+                                                className={`${inputClass("phone")} pl-11`}
+                                                placeholder="02-0000-0000"
+                                                inputMode="tel"
+                                            />
+                                        </span>
+                                    </Field>
+                                    <Field label="기본 영업시간" error={errors.hours}>
+                                        <input
+                                            value={form.hours}
+                                            onChange={(event) => update("hours", event.target.value)}
+                                            className={inputClass("hours")}
+                                            placeholder="예: 매일 10:00 - 20:00"
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="대표 메뉴 또는 서비스"
+                                        error={errors.menu}
+                                        className="sm:col-span-2"
+                                        hint="쉼표로 구분해 여러 개를 입력할 수 있어요."
+                                    >
+                                        <input
+                                            value={form.menu}
+                                            onChange={(event) => update("menu", event.target.value)}
+                                            className={inputClass("menu")}
+                                            placeholder="예: 바질 파스타, 제철 샐러드, 와인 페어링"
+                                        />
+                                    </Field>
+                                    <fieldset className="sm:col-span-2">
+                                        <legend className="text-xs font-bold text-[#42526e]">가게의 말투</legend>
+                                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                            {tones.map((tone) => (
+                                                <label
+                                                    key={tone}
+                                                    className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold ${form.tone === tone ? "border-[#91d9c4] bg-[#eafaf5] text-[#168165]" : "border-[#ded9cf] text-[#42526e]"}`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="tone"
+                                                        value={tone}
+                                                        checked={form.tone === tone}
+                                                        onChange={(event) => update("tone", event.target.value)}
+                                                        className="h-4 w-4 accent-[#168165]"
+                                                    />
+                                                    {tone}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <SparklesIcon size={18} className="text-[#168165]" />
+                                    <div>
+                                        <h2 className="text-base font-bold text-[#172033]">이 정보로 시작할게요.</h2>
+                                        <p className="mt-0.5 text-xs text-slate-500">
+                                            등록 후 바로 이 가게에 맞춘 AI 콘텐츠 초안을 만들 수 있어요.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-6 rounded-2xl border border-[#d7e6df] bg-[#f0faf6] p-5">
+                                    <div className="flex items-start gap-3">
+                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#172b4d] text-[#3dd7af]">
+                                            <StoreIcon size={20} />
+                                        </span>
+                                        <div className="min-w-0">
+                                            <p className="text-base font-extrabold text-[#172033]">{form.name}</p>
+                                            <p className="mt-1 text-xs text-[#42526e]">
+                                                {form.category} · {form.neighborhood}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <dl className="mt-5 grid gap-3 border-t border-[#cfe8df] pt-4 text-xs sm:grid-cols-2">
+                                        <Detail label="주소" value={form.address} />
+                                        <Detail label="대표 전화" value={form.phone} />
+                                        <Detail label="영업시간" value={form.hours} />
+                                        <Detail label="가게 말투" value={form.tone} />
+                                        <Detail label="대표 메뉴" value={form.menu} className="sm:col-span-2" />
+                                    </dl>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-8 flex items-center justify-between border-t border-[#eeeae2] pt-5">
+                            {step > 1 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setStep((current) => Math.max(current - 1, 1) as 1 | 2 | 3)}
+                                    className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-500 hover:bg-[#f5f2eb]"
+                                >
+                                    <ArrowLeftIcon size={15} /> 이전
+                                </button>
+                            ) : (
+                                <span />
+                            )}
+                            {step < 3 ? (
+                                <button
+                                    type="button"
+                                    onClick={next}
+                                    className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66]"
+                                >
+                                    다음 <ArrowRightIcon size={15} />
+                                </button>
+                            ) : (
+                                <button
+                                    type="submit"
+                                    disabled={isCreating}
+                                    className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66] disabled:opacity-60"
+                                >
+                                    {isCreating ? "가게 만드는 중…" : "가게 등록 완료"}{" "}
+                                    {!isCreating && <CheckIcon size={15} />}
+                                </button>
+                            )}
+                        </div>
+                    </form>
+                </section>
+            </div>
+        </main>
+    )
+}
+function Field({
+    label,
+    error,
+    hint,
+    className,
+    children,
+}: {
+    label: string
+    error?: string
+    hint?: string
+    className?: string
+    children: React.ReactNode
+}) {
+    return (
+        <label className={`block text-xs font-bold text-[#42526e] ${className ?? ""}`}>
+            {label}
+            {children}
+            {error ? (
+                <span className="mt-1.5 block text-[11px] font-medium text-[#d6503b]">{error}</span>
+            ) : hint ? (
+                <span className="mt-1.5 block text-[11px] font-medium text-slate-400">{hint}</span>
+            ) : null}
+        </label>
+    )
+}
+function Detail({ label, value, className }: { label: string; value: string; className?: string }) {
+    return (
+        <div className={className}>
+            <dt className="font-bold text-slate-500">{label}</dt>
+            <dd className="mt-1 break-keep font-semibold leading-5 text-[#172033]">{value}</dd>
         </div>
-        <form onSubmit={createStore} className="p-5 sm:p-8 space-y-5">
-          {step === 1 && (
-            <div className="space-y-4">
-              <label className="block text-xs font-bold text-[#42526e]">
-                가게 이름 *
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className={inputClass('name')}
-                  placeholder="예: 모모커피 연남점"
-                />
-                {errors.name && (
-                  <span className="mt-1 block text-[11px] font-medium text-[#d6503b]">
-                    {errors.name}
-                  </span>
-                )}
-              </label>
-              <label className="block text-xs font-bold text-[#42526e]">
-                업종 카테고리
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
-                  className="mt-1.5 w-full rounded-xl border border-[#ded9cf] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#3dd7af]"
-                >
-                  <option>카페 · 디저트</option>
-                  <option>식당 · 요리</option>
-                  <option>생활 · 쇼핑</option>
-                  <option>미용 · 뷰티</option>
-                </select>
-              </label>
-              <label className="block text-xs font-bold text-[#42526e]">
-                행정구역 주소 (시/구/동) *
-                <input
-                  value={form.neighborhood}
-                  onChange={(e) => setForm((prev) => ({ ...prev, neighborhood: e.target.value }))}
-                  className={inputClass('neighborhood')}
-                  placeholder="예: 서울 마포구 연남동"
-                />
-                {errors.neighborhood && (
-                  <span className="mt-1 block text-[11px] font-medium text-[#d6503b]">
-                    {errors.neighborhood}
-                  </span>
-                )}
-              </label>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              <label className="block text-xs font-bold text-[#42526e]">
-                상세 주소 *
-                <input
-                  value={form.address}
-                  onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-                  className={inputClass('address')}
-                  placeholder="지번 혹은 도로명 주소 상세 입력"
-                />
-                {errors.address && (
-                  <span className="mt-1 block text-[11px] font-medium text-[#d6503b]">
-                    {errors.address}
-                  </span>
-                )}
-              </label>
-              <label className="block text-xs font-bold text-[#42526e]">
-                전화번호
-                <input
-                  value={form.phone}
-                  onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-                  className={inputClass('phone')}
-                  placeholder="예: 02-123-4567"
-                />
-              </label>
-              <label className="block text-xs font-bold text-[#42526e]">
-                영업시간
-                <input
-                  value={form.hours}
-                  onChange={(e) => setForm((prev) => ({ ...prev, hours: e.target.value }))}
-                  className={inputClass('hours')}
-                  placeholder="예: 매일 10:00 - 22:00"
-                />
-              </label>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-4">
-              <label className="block text-xs font-bold text-[#42526e]">
-                대표 메뉴 / 서비스 (쉼표로 구분)
-                <input
-                  value={form.menu}
-                  onChange={(e) => setForm((prev) => ({ ...prev, menu: e.target.value }))}
-                  className={inputClass('menu')}
-                  placeholder="예: 모모 라떼, 버터 휘낭시에, 드립 커피"
-                />
-              </label>
-              <label className="block text-xs font-bold text-[#42526e]">
-                브랜드 어조 / 말투
-                <select
-                  value={form.tone}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tone: e.target.value }))}
-                  className="mt-1.5 w-full rounded-xl border border-[#ded9cf] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#3dd7af]"
-                >
-                  <option>따뜻하고 담백한 동네 카페의 말투</option>
-                  <option>정중하고 전문적인 비즈니스 말투</option>
-                  <option>친근하고 활기찬 트렌디한 말투</option>
-                </select>
-              </label>
-            </div>
-          )}
-
-          <footer className="flex items-center justify-between border-t border-[#eeeae2] pt-5">
-            {step > 1 ? (
-              <button
-                type="button"
-                onClick={prev}
-                className="flex items-center gap-1.5 rounded-xl border border-[#ded9cf] bg-white px-4 py-2.5 text-xs font-bold text-[#42526e] hover:bg-[#f7f5f0]"
-              >
-                <ArrowLeft size={14} />
-                이전
-              </button>
-            ) : onCancel ? (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="rounded-xl border border-[#ded9cf] bg-white px-4 py-2.5 text-xs font-bold text-[#42526e] hover:bg-[#f7f5f0]"
-              >
-                취소
-              </button>
-            ) : (
-              <div />
-            )}
-
-            {step < 3 ? (
-              <button
-                type="button"
-                onClick={next}
-                className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66]"
-              >
-                다음
-                <ArrowRight size={14} />
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={isCreating}
-                className="flex items-center gap-1.5 rounded-xl bg-[#168165] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#126b53] disabled:opacity-50"
-              >
-                {isCreating ? '생성 중…' : '가게 만들기'}
-                {!isCreating && <Check size={14} strokeWidth={2.5} />}
-              </button>
-            )}
-          </footer>
-        </form>
-      </div>
-    </main>
-  )
+    )
 }

@@ -1,142 +1,176 @@
-import { useState } from "react"
-import { Bot, CheckCheck, Send, Star } from "lucide-react"
+import { useMemo, useState } from "react"
+import { BotIcon, ExternalLinkIcon, SearchIcon, SendIcon, StarIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
 
-const sampleReviews = [
+const reviews = [
     {
-        name: "김민지",
+        id: 1,
+        name: "하은 서",
         rating: 5,
-        date: "2시간 전",
-        text: "커피가 향긋하고 버터 휘낭시에가 진짜 겉바속촉 맛있어요! 연남동 올 때마다 들를 정도록 좋을 것 같아요. 조용하고 따뜻한 분위기도 마음에 듭니다.",
-        source: "네이버 플레이스",
-        color: "text-[#168165] bg-[#eafaf5] border-[#bce8ce]",
+        time: "32분 전",
+        text: "커피도 정말 맛있고, 직원분이 메뉴를 친절하게 설명해주셨어요. 비 오는 날 창가 자리가 특히 좋네요.",
     },
     {
-        name: "Lee Dongwook",
+        id: 2,
+        name: "민준 김",
         rating: 4,
-        date: "어제",
-        text: "Every single thing was great, especially the momo latte. Cozy vibe inside.",
-        source: "Google Business",
-        color: "text-[#29425b] bg-[#cbdcf6] border-[#cbdcf6]",
+        time: "2시간 전",
+        text: "조용히 일하기 좋아요. 디카페인 옵션이 더 많아지면 좋겠습니다.",
+    },
+    {
+        id: 3,
+        name: "예린 박",
+        rating: 5,
+        time: "어제",
+        text: "휘낭시에 선물 포장도 너무 예뻐요. 다음에 또 올게요!",
+    },
+    {
+        id: 4,
+        name: "도현 이",
+        rating: 5,
+        time: "어제",
+        text: "연남동에서 가장 편안한 커피 공간이에요. 라떼가 특히 좋았습니다.",
+    },
+    {
+        id: 5,
+        name: "서진 윤",
+        rating: 4,
+        time: "7월 11일",
+        text: "친절하고 분위기가 좋아요. 주말에는 조금 붐비네요.",
     },
 ]
-
-type InboxPageProps = {
-    storeName: string
-}
-
-export function InboxPage({ storeName }: InboxPageProps) {
-    const [replied, setReplied] = useState<string[]>([])
+export function InboxPage({ storeName }: { storeName: string }) {
+    const [query, setQuery] = useState("")
+    const [selectedId, setSelectedId] = useState(1)
     const [draft, setDraft] = useState("")
     const [sent, setSent] = useState(false)
-
+    const visible = useMemo(
+        () => reviews.filter((review) => review.name.includes(query) || review.text.includes(query)),
+        [query]
+    )
+    const selected = reviews.find((review) => review.id === selectedId) ?? reviews[0]
+    const createDraft = () => {
+        setDraft(
+            `안녕하세요, ${selected.name}님. ${storeName}를 찾아주시고 따뜻한 후기를 남겨주셔서 감사합니다. 다음 방문에도 편안한 시간을 보내실 수 있도록 정성껏 준비하겠습니다.`
+        )
+        setSent(false)
+    }
     return (
         <>
             <PageHeader
-                eyebrow="Review operations"
-                title="리뷰 관리"
-                description="다양한 채널로 유입된 고객 리뷰를 모아보고 AI 초안을 활용해 답변합니다."
+                eyebrow="Google Places reviews"
+                title="리뷰"
+                description="Google Places API로 최신 5개 리뷰를 불러왔어   요. 전체 리뷰는 Google에서 확인할 수 있습니다."
             />
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                <div className="space-y-4">
-                    {sampleReviews.map((review) => {
-                        const hasDraft = replied.includes(review.name)
-                        return (
-                            <article
-                                key={review.name}
-                                className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm"
-                            >
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h2 className="text-sm font-bold text-[#172033]">{review.name}</h2>
-                                            <span className="text-xs text-slate-400">{review.date}</span>
-                                        </div>
-                                        <div className="mt-1 flex items-center gap-0.5 text-[#ff8067]">
-                                            {Array.from({ length: 5 }).map((_, index) => (
-                                                <Star
-                                                    key={index}
-                                                    size={13}
-                                                    fill={index < review.rating ? "currentColor" : "none"}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <span
-                                        className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${review.color}`}
-                                    >
-                                        {review.source}
-                                    </span>
-                                </div>
-                                <p className="mt-3.5 text-xs leading-6 text-slate-600">{review.text}</p>
-                                <div className="mt-4 border-t border-[#eeeae2] pt-3.5">
-                                    <div className="flex items-center justify-between">
-                                        {hasDraft ? (
-                                            <span className="flex items-center gap-1.5 text-xs font-bold text-[#168165]">
-                                                <CheckCheck size={14} aria-hidden="true" />
-                                                답글 초안을 저장했어요
-                                            </span>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setReplied((current) => [...current, review.name])
-                                                    setDraft(
-                                                        `안녕하세요 ${review.name} 고객님! ${storeName}을 찾아주시고 정성스러운 후기를 남겨주셔서 진심으로 감사드립니다. 말씀해 주신 덕분에 큰 힘이 됩니다. 앞으로도 편안한 공간과 맛있는 메뉴로 만족을 드릴 수 있도록 정성을 다하겠습니다. 다음에 또 따뜻한 한 잔 하러 들러주세요!`
-                                                    )
-                                                }}
-                                                className="flex items-center gap-1.5 rounded-lg border border-[#d8dcd9] px-2.5 py-1.5 text-[11px] font-bold text-[#29425b] transition-colors hover:border-[#3dd7af] hover:bg-[#eafaf5]"
-                                            >
-                                                <Bot size={14} className="text-[#168165]" aria-hidden="true" />
-                                                AI 답글 만들기
-                                            </button>
-                                        )}
-                                        <button
-                                            type="button"
-                                            className="text-[11px] font-semibold text-slate-500 hover:text-[#172033]"
-                                        >
-                                            직접 답글
-                                        </button>
-                                    </div>
-                                </div>
-                            </article>
-                        )
-                    })}
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#d8e9e1] bg-[#effaf6] px-5 py-4">
+                <div>
+                    <p className="text-sm font-bold text-[#172033]">Google 리뷰 총 128개 · 동기화된 최신 리뷰 5개</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                        API 제한으로 최근 5개만 이곳에서 답글 초안을 만들 수 있어요.
+                    </p>
                 </div>
-
-                <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm flex flex-col h-fit">
-                    <h2 className="text-sm font-bold text-[#172033]">답글 에디터</h2>
-                    <div className="mt-4 flex-1">
-                        {sent ? (
-                            <div role="status" className="text-center py-8">
-                                <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#eafaf5] text-[#168165]">
-                                    <CheckCheck size={20} />
-                                </span>
-                                <p className="mt-3 text-xs font-bold text-[#172033]">
-                                    답글이 정상적으로 게시되었습니다.
-                                </p>
-                            </div>
-                        ) : (
-                            <div>
-                                <textarea
-                                    value={draft}
-                                    onChange={(event) => setDraft(event.target.value)}
-                                    className="min-h-[120px] w-full rounded-xl border border-[#ded9cf] p-3 text-sm leading-6 outline-none focus:border-[#3dd7af]"
-                                    placeholder="답글을 직접 작성하거나 AI 초안을 받아보세요."
-                                />
-                                <div className="mt-2 flex justify-end">
-                                    <button
-                                        type="button"
-                                        disabled={!draft}
-                                        onClick={() => setSent(true)}
-                                        className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40"
-                                    >
-                                        <Send size={15} />
-                                        답글 게시
-                                    </button>
+                <a
+                    href="https://www.google.com/maps"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 rounded-lg bg-[#172b4d] px-3 py-2 text-xs font-bold text-white hover:bg-[#223b66]"
+                >
+                    <ExternalLinkIcon size={14} />
+                    Google에서 전체 보기
+                </a>
+            </div>
+            <div className="grid min-h-[620px] overflow-hidden rounded-2xl border border-[#ded9cf] bg-white shadow-sm lg:grid-cols-[330px_minmax(0,1fr)]">
+                <aside className="border-b border-[#eeeae2] lg:border-b-0 lg:border-r">
+                    <div className="border-b border-[#eeeae2] p-4">
+                        <label className="relative block">
+                            <SearchIcon size={16} className="absolute left-3 top-3 text-slate-400" />
+                            <input
+                                value={query}
+                                onChange={(event) => setQuery(event.target.value)}
+                                className="w-full rounded-lg border border-[#ded9cf] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#3dd7af]"
+                                placeholder="리뷰 검색"
+                            />
+                        </label>
+                        <p className="mt-3 text-[11px] font-semibold text-slate-500">최신 동기화 · 5개</p>
+                    </div>
+                    <div className="divide-y divide-[#eeeae2]">
+                        {visible.map((review) => (
+                            <button
+                                key={review.id}
+                                type="button"
+                                onClick={() => {
+                                    setSelectedId(review.id)
+                                    setDraft("")
+                                    setSent(false)
+                                }}
+                                className={`w-full px-4 py-4 text-left ${selectedId === review.id ? "bg-[#f1f7f6]" : "hover:bg-[#faf9f6]"}`}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-[#172033]">{review.name}</span>
+                                    <span className="text-[10px] text-slate-400">{review.time}</span>
                                 </div>
+                                <div className="mt-1 flex gap-0.5">
+                                    {Array.from({
+                                        length: review.rating,
+                                    }).map((_, index) => (
+                                        <StarIcon key={index} size={11} className="fill-[#f4b840] text-[#f4b840]" />
+                                    ))}
+                                </div>
+                                <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-600">{review.text}</p>
+                            </button>
+                        ))}
+                    </div>
+                </aside>
+                <section className="flex min-w-0 flex-col">
+                    <div className="border-b border-[#eeeae2] px-5 py-4">
+                        <h2 className="text-sm font-bold text-[#172033]">{selected.name}</h2>
+                        <p className="mt-1 text-[11px] text-slate-500">Google 리뷰 · {selected.time}</p>
+                    </div>
+                    <div className="flex-1 bg-[#faf9f6] p-5">
+                        <article className="max-w-xl rounded-2xl border border-[#e6e1d8] bg-white p-5">
+                            <div className="flex gap-0.5">
+                                {Array.from({
+                                    length: selected.rating,
+                                }).map((_, index) => (
+                                    <StarIcon key={index} size={14} className="fill-[#f4b840] text-[#f4b840]" />
+                                ))}
+                            </div>
+                            <p className="mt-4 text-sm leading-7 text-slate-700">{selected.text}</p>
+                        </article>
+                        {sent && (
+                            <div className="ml-auto mt-5 max-w-xl rounded-2xl bg-[#172b4d] p-4 text-sm leading-6 text-white">
+                                {draft || `안녕하세요, ${selected.name}님. 소중한 후기 감사합니다.`}
                             </div>
                         )}
+                    </div>
+                    <div className="border-t border-[#eeeae2] p-4">
+                        <button
+                            type="button"
+                            onClick={createDraft}
+                            className="flex items-center gap-1.5 rounded-lg border border-[#b9dcd1] bg-[#eafaf5] px-3 py-2 text-xs font-bold text-[#168165]"
+                        >
+                            <BotIcon size={15} />
+                            AI 답글 초안
+                        </button>
+                        <textarea
+                            value={draft}
+                            onChange={(event) => setDraft(event.target.value)}
+                            className="mt-3 min-h-[84px] w-full rounded-xl border border-[#ded9cf] p-3 text-sm leading-6 outline-none focus:border-[#3dd7af]"
+                            placeholder="답글을 직접 작성하거나 AI 초안을 받아보세요."
+                        />
+                        <div className="mt-2 flex justify-end">
+                            <button
+                                type="button"
+                                disabled={!draft}
+                                onClick={() => {
+                                    setSent(true)
+                                }}
+                                className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40"
+                            >
+                                <SendIcon size={15} />
+                                답글 게시
+                            </button>
+                        </div>
                     </div>
                 </section>
             </div>

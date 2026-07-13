@@ -204,14 +204,14 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                                     type="button"
                                                     onClick={() => toggleChannel(channel.name)}
                                                     aria-pressed={selected}
-                                                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-bold \${
+                                                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-bold ${
                             selected
                               ? 'border-[#20365b] bg-white text-[#172033]'
                               : 'border-transparent bg-[#ebe7df] text-slate-500'
                           }`}
                                                 >
                                                     <span
-                                                        className={`flex h-4 w-4 items-center justify-center rounded-sm \${channel.color}`}
+                                                        className={`flex h-4 w-4 items-center justify-center rounded-sm ${channel.color}`}
                                                     >
                                                         <Icon size={10} />
                                                     </span>
@@ -228,7 +228,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                     <button
                                         type="button"
                                         onClick={() => setImageAdded((prev) => !prev)}
-                                        className={`mt-2 flex h-24 w-24 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed transition-colors text-slate-400 \${
+                                        className={`mt-2 flex h-24 w-24 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed transition-colors text-slate-400 ${
                       imageAdded
                         ? 'border-[#168165] bg-[#eafaf5] text-[#168165]'
                         : 'border-[#ded9cf] bg-white hover:bg-[#f7f5f0]'
@@ -259,7 +259,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                                     type="button"
                                                     onClick={() => setSchedule(item)}
                                                     aria-pressed={selected}
-                                                    className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-bold transition-colors \${
+                                                    className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-bold transition-colors ${
                             selected
                               ? 'border-[#172b4d] bg-white text-[#172033]'
                               : 'border-[#ded9cf] bg-white text-slate-500 hover:bg-[#f7f5f0]'

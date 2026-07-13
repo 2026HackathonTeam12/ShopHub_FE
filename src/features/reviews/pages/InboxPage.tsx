@@ -63,7 +63,7 @@ export function InboxPage({ storeName }: InboxPageProps) {
                                         </div>
                                     </div>
                                     <span
-                                        className={`rounded-md border px-2 py-0.5 text-[10px] font-bold \${review.color}`}
+                                        className={`rounded-md border px-2 py-0.5 text-[10px] font-bold ${review.color}`}
                                     >
                                         {review.source}
                                     </span>
@@ -82,7 +82,7 @@ export function InboxPage({ storeName }: InboxPageProps) {
                                                 onClick={() => {
                                                     setReplied((current) => [...current, review.name])
                                                     setDraft(
-                                                        `안녕하세요 \${review.name} 고객님! \${storeName}을 찾아주시고 정성스러운 후기를 남겨주셔서 진심으로 감사드립니다. 말씀해 주신 덕분에 큰 힘이 됩니다. 앞으로도 편안한 공간과 맛있는 메뉴로 만족을 드릴 수 있도록 정성을 다하겠습니다. 다음에 또 따뜻한 한 잔 하러 들러주세요!`
+                                                        `안녕하세요 ${review.name} 고객님! ${storeName}을 찾아주시고 정성스러운 후기를 남겨주셔서 진심으로 감사드립니다. 말씀해 주신 덕분에 큰 힘이 됩니다. 앞으로도 편안한 공간과 맛있는 메뉴로 만족을 드릴 수 있도록 정성을 다하겠습니다. 다음에 또 따뜻한 한 잔 하러 들러주세요!`
                                                     )
                                                 }}
                                                 className="flex items-center gap-1.5 rounded-lg border border-[#d8dcd9] px-2.5 py-1.5 text-[11px] font-bold text-[#29425b] transition-colors hover:border-[#3dd7af] hover:bg-[#eafaf5]"

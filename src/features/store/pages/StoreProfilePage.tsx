@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Check } from 'lucide-react'
-import { StoreProfile } from '../../../data/store'
+import type { StoreProfile } from '../../../data/store'
 import { PageHeader } from '../../../components/common/PageHeader'
 
 type StoreProfilePageProps = {

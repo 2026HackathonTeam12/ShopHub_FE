@@ -52,7 +52,7 @@ export function ContentCenterPage({ onCompose }: ContentCenterPageProps) {
                                     key={tab}
                                     type="button"
                                     onClick={() => setFilter(tab)}
-                                    className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors \${
+                                    className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors ${
                     filter === tab ? 'bg-white text-[#172033] shadow-sm' : 'text-slate-500'
                   }`}
                                 >
@@ -73,7 +73,7 @@ export function ContentCenterPage({ onCompose }: ContentCenterPageProps) {
                                         {post.channels} · {post.date}
                                     </p>
                                 </div>
-                                <span className={`rounded-md px-2 py-1 text-[10px] font-bold \${post.style}`}>
+                                <span className={`rounded-md px-2 py-1 text-[10px] font-bold ${post.style}`}>
                                     {post.status}
                                 </span>
                                 <button

@@ -107,14 +107,14 @@ export function ContentComposer() {
                                     type="button"
                                     onClick={() => toggleTarget(target.name)}
                                     aria-pressed={selected}
-                                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-semibold transition-colors \${
+                                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-semibold transition-colors ${
                     selected
                       ? 'border-[#20365b] bg-white text-[#172033]'
                       : 'border-transparent bg-[#ede9e1] text-slate-400'
                   }`}
                                 >
                                     <span
-                                        className={`flex h-4 w-4 items-center justify-center rounded-sm \${target.color}`}
+                                        className={`flex h-4 w-4 items-center justify-center rounded-sm ${target.color}`}
                                     >
                                         <Icon size={10} className="text-[#172033]" aria-hidden="true" />
                                     </span>

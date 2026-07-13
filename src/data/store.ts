@@ -1,5 +1,3 @@
-import { Camera, MapPin } from 'lucide-react'
-
 export interface StoreProfile {
   id: string
   name: string

@@ -1,6 +1,6 @@
-import React, { FormEvent, useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
-import { StoreProfile } from '../../../data/store'
+import type { StoreProfile } from '../../../data/store'
 
 type StoreOnboardingProps = {
   initialStep?: number
@@ -66,7 +66,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
     window.setTimeout(() => {
       const cleanName = form.name.trim()
       const initials = cleanName.slice(0, 2).toUpperCase()
-      const id = `\${cleanName.toLowerCase().replace(/\\s+/g, '-')}-\${Date.now()}`
+      const id = `${cleanName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
       onComplete({
         id,
         name: cleanName,
@@ -77,7 +77,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
         hours: form.hours.trim(),
         initials,
         accent: accentOptions[Math.floor(Math.random() * accentOptions.length)],
-        description: `\${form.neighborhood.trim()}의 \${form.category}입니다.`,
+        description: `${form.neighborhood.trim()}의 ${form.category}입니다.`,
         menu: form.menu.split(',').map((item) => item.trim()).filter(Boolean),
         tone: form.tone,
         reviewCount: 0,
@@ -87,7 +87,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
   }
 
   const inputClass = (key: keyof StoreForm) =>
-    `mt-1.5 w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-[#172033] outline-none transition-colors focus:border-[#3dd7af] \${
+    `mt-1.5 w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-[#172033] outline-none transition-colors focus:border-[#3dd7af] ${
       errors[key] ? 'border-[#d6503b]' : 'border-[#ded9cf]'
     }`
 
@@ -109,7 +109,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
               return (
                 <li key={label} className="flex min-w-0 items-center gap-2">
                   <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold \${
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
                       complete
                         ? 'bg-[#3dd7af] text-[#10213b]'
                         : active
@@ -120,7 +120,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
                     {complete ? <Check size={12} strokeWidth={2.5} /> : number}
                   </span>
                   <span
-                    className={`truncate text-xs font-bold \${
+                    className={`truncate text-xs font-bold ${
                       active ? 'text-[#172033]' : 'text-slate-400'
                     }`}
                   >

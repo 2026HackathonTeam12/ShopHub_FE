@@ -1,3 +1,43 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap");
+
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+    * {
+        box-sizing: border-box;
+    }
+    body {
+        margin: 0;
+        min-width: 320px;
+        background: #f5f2eb;
+        color: #172033;
+        font-family: "Noto Sans KR", system-ui, sans-serif;
+    }
+    button,
+    input,
+    textarea,
+    select {
+        font: inherit;
+    }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+        outline: 3px solid rgba(61, 215, 175, 0.7);
+        outline-offset: 2px;
+    }
+}
+@layer utilities {
+    .font-mono-label {
+        font-family: "DM Mono", monospace;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-none {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}

@@ -2,11 +2,13 @@ import { AIRecommendation } from "../components/AIRecommendation"
 import { PageHeader } from "../../../components/common/PageHeader"
 import { ContentComposer } from "../../content/components/ContentComposer"
 import { ReviewInbox } from "../../../components/common/ReviewInbox"
+
 type DashboardPageProps = {
     onNavigate: (view: string) => void
     onCompose: () => void
 }
-export function DashboardPage({ onNavigate, onCompose }: DashboardPageProps) {
+
+export function DashboardPage({ onCompose }: DashboardPageProps) {
     return (
         <>
             <PageHeader

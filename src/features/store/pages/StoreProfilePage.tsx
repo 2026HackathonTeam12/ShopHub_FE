@@ -1,35 +1,19 @@
 import { useState } from "react"
 import { CheckIcon, Clock3Icon, PlusIcon, StoreIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
+import { useStoreSettings } from "../../../store"
 import type { StoreProfile } from "../../../data/store"
 
-const defaultHours = [
-    ["월요일", "10:00", "21:00"],
-    ["화요일", "10:00", "21:00"],
-    ["수요일", "10:00", "21:00"],
-    ["목요일", "10:00", "21:00"],
-    ["금요일", "10:00", "22:00"],
-    ["토요일", "11:00", "22:00"],
-    ["일요일", "11:00", "20:00"],
-]
 export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const [saved, setSaved] = useState(false)
-    const [hours, setHours] = useState(defaultHours)
-    const [menus, setMenus] = useState(store.menu)
+    const { hours, menus, updateHours, addMenu } = useStoreSettings()
     const [newMenu, setNewMenu] = useState("")
-    const updateHours = (index: number, position: number, value: string) => {
-        setHours((current) =>
-            current.map((row, rowIndex) =>
-                rowIndex === index ? row.map((cell, cellIndex) => (cellIndex === position ? value : cell)) : row
-            )
-        )
-    }
-    const addMenu = () => {
-        const item = newMenu.trim()
-        if (!item || menus.includes(item)) return
-        setMenus((current) => [...current, item])
+
+    const handleAddMenu = () => {
+        addMenu(newMenu)
         setNewMenu("")
     }
+
     return (
         <>
             <PageHeader
@@ -140,7 +124,7 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                             onKeyDown={(event) => {
                                 if (event.key === "Enter") {
                                     event.preventDefault()
-                                    addMenu()
+                                    handleAddMenu()
                                 }
                             }}
                             className="min-w-0 flex-1 rounded-xl border border-[#ded9cf] px-3 py-2.5 text-sm outline-none focus:border-[#3dd7af]"
@@ -148,7 +132,7 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                         />
                         <button
                             type="button"
-                            onClick={addMenu}
+                            onClick={handleAddMenu}
                             className="flex items-center justify-center gap-1.5 rounded-xl border border-[#ded9cf] px-3 py-2.5 text-xs font-bold text-[#29425b] hover:bg-[#f7f5f0]"
                         >
                             <PlusIcon size={15} /> 메뉴 추가

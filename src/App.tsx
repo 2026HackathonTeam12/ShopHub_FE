@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
-import { initialStores, type StoreProfile } from "./data/store"
+import { AppProvider, useStores } from "./store"
 import { AuthPage } from "./features/auth/pages/AuthPage"
 import { StoreOnboarding } from "./features/store/pages/StoreOnboarding"
 import { WorkspaceShell } from "./components/layout/WorkspaceShell"
@@ -9,19 +9,16 @@ type AuthMode = "login" | "signup"
 
 function AppRoutes() {
     const navigate = useNavigate()
-    const [stores, setStores] = useState<StoreProfile[]>(initialStores)
-    const [selectedStoreId, setSelectedStoreId] = useState<string>(initialStores[0]?.id || "")
+    const { stores, selectedStoreId, setSelectedStoreId, addStore, clearStores, initializeStores } = useStores()
     const [initialStoreStep, setInitialStoreStep] = useState(1)
 
-    const addStore = (newStore: StoreProfile) => {
-        setStores((current) => [...current, newStore])
-        setSelectedStoreId(newStore.id)
+    const handleAddStore = (newStore: Parameters<typeof addStore>[0]) => {
+        addStore(newStore)
         navigate("/dashboard")
     }
 
     const logout = () => {
-        setStores([])
-        setSelectedStoreId("")
+        clearStores()
         navigate("/login")
     }
 
@@ -49,14 +46,12 @@ function AppRoutes() {
                         initialMode="login"
                         onLogin={() => {
                             if (stores.length === 0) {
-                                setStores(initialStores)
-                                setSelectedStoreId(initialStores[0].id)
+                                initializeStores()
                             }
                             navigate("/dashboard")
                         }}
                         onSignup={() => {
-                            setStores([])
-                            setSelectedStoreId("")
+                            clearStores()
                             navigate("/stores/new")
                         }}
                         onModeChange={(mode) => navigate(mode === "signup" ? "/signup" : "/login")}
@@ -70,8 +65,7 @@ function AppRoutes() {
                         initialMode="signup"
                         onLogin={() => navigate("/dashboard")}
                         onSignup={() => {
-                            setStores([])
-                            setSelectedStoreId("")
+                            clearStores()
                             navigate("/stores/new")
                         }}
                         onModeChange={(mode: AuthMode) => navigate(mode === "signup" ? "/signup" : "/login")}
@@ -83,7 +77,7 @@ function AppRoutes() {
                 element={
                     <StoreOnboarding
                         initialStep={initialStoreStep}
-                        onComplete={addStore}
+                        onComplete={handleAddStore}
                         onCancel={stores.length > 0 ? () => navigate("/dashboard") : undefined}
                     />
                 }
@@ -101,7 +95,9 @@ function AppRoutes() {
 export default function App() {
     return (
         <BrowserRouter>
-            <AppRoutes />
+            <AppProvider>
+                <AppRoutes />
+            </AppProvider>
         </BrowserRouter>
     )
 }

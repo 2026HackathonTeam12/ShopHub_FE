@@ -1,52 +1,17 @@
 import { useMemo, useState } from "react"
 import { BotIcon, ExternalLinkIcon, SearchIcon, SendIcon, StarIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
+import { useReviews } from "../../../store"
 
-const reviews = [
-    {
-        id: 1,
-        name: "하은 서",
-        rating: 5,
-        time: "32분 전",
-        text: "커피도 정말 맛있고, 직원분이 메뉴를 친절하게 설명해주셨어요. 비 오는 날 창가 자리가 특히 좋네요.",
-    },
-    {
-        id: 2,
-        name: "민준 김",
-        rating: 4,
-        time: "2시간 전",
-        text: "조용히 일하기 좋아요. 디카페인 옵션이 더 많아지면 좋겠습니다.",
-    },
-    {
-        id: 3,
-        name: "예린 박",
-        rating: 5,
-        time: "어제",
-        text: "휘낭시에 선물 포장도 너무 예뻐요. 다음에 또 올게요!",
-    },
-    {
-        id: 4,
-        name: "도현 이",
-        rating: 5,
-        time: "어제",
-        text: "연남동에서 가장 편안한 커피 공간이에요. 라떼가 특히 좋았습니다.",
-    },
-    {
-        id: 5,
-        name: "서진 윤",
-        rating: 4,
-        time: "7월 11일",
-        text: "친절하고 분위기가 좋아요. 주말에는 조금 붐비네요.",
-    },
-]
 export function InboxPage({ storeName }: { storeName: string }) {
+    const { reviews } = useReviews()
     const [query, setQuery] = useState("")
-    const [selectedId, setSelectedId] = useState(1)
+    const [selectedId, setSelectedId] = useState(reviews[0]?.id ?? 1)
     const [draft, setDraft] = useState("")
     const [sent, setSent] = useState(false)
     const visible = useMemo(
         () => reviews.filter((review) => review.name.includes(query) || review.text.includes(query)),
-        [query]
+        [query, reviews]
     )
     const selected = reviews.find((review) => review.id === selectedId) ?? reviews[0]
     const createDraft = () => {
@@ -60,7 +25,7 @@ export function InboxPage({ storeName }: { storeName: string }) {
             <PageHeader
                 eyebrow="Google Places reviews"
                 title="리뷰"
-                description="Google Places API로 최신 5개 리뷰를 불러왔어   요. 전체 리뷰는 Google에서 확인할 수 있습니다."
+                description="Google Places API로 최신 5개 리뷰를 불러왔어요. 전체 리뷰는 Google에서 확인할 수 있습니다."
             />
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#d8e9e1] bg-[#effaf6] px-5 py-4">
                 <div>

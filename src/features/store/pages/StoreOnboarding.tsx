@@ -29,9 +29,11 @@ type StoreForm = {
 type FieldErrors = Partial<Record<keyof StoreForm, string>>
 const tones = ["따뜻하고 담백한", "경쾌하고 친근한", "전문적이고 신뢰감 있는", "정갈하고 차분한"]
 const accentOptions = ["bg-[#e9c7a7]", "bg-[#b9d9cf]", "bg-[#efd59d]", "bg-[#d7c5ea]"]
+
 export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: StoreOnboardingProps) {
     const [step, setStep] = useState(initialStep)
     const [isCreating, setIsCreating] = useState(false)
+    const [isPendingConfirm, setIsPendingConfirm] = useState(false)
     const [createdStore, setCreatedStore] = useState<StoreProfile | null>(null)
     const [errors, setErrors] = useState<FieldErrors>({})
     const [form, setForm] = useState<StoreForm>({
@@ -45,16 +47,35 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
         tone: tones[0],
     })
     const steps = useMemo(() => ["기본 정보", "운영 정보", "확인"], [])
+
+    const formatPhone = (value: string) => {
+        const digits = value.replace(/\D/g, "")
+        if (digits.startsWith("02")) {
+            if (digits.length <= 2) return digits
+            if (digits.length <= 5) return `${digits.slice(0, 2)}-${digits.slice(2)}`
+            if (digits.length <= 9) return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`
+            return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6, 10)}`
+        } else {
+            if (digits.length <= 3) return digits
+            if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+            if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+            return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`
+        }
+    }
+
     const update = (key: keyof StoreForm, value: string) => {
+        const finalValue = key === "phone" ? formatPhone(value) : value
+
         setForm((current) => ({
             ...current,
-            [key]: value,
+            [key]: finalValue,
         }))
         setErrors((current) => ({
             ...current,
             [key]: undefined,
         }))
     }
+
     const validate = (currentStep: number) => {
         const nextErrors: FieldErrors = {}
         if (currentStep === 1) {
@@ -71,17 +92,30 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
         setErrors(nextErrors)
         return Object.keys(nextErrors).length === 0
     }
+
     const next = () => {
         if (!validate(step)) return
-
-        setStep((current) => Math.max(current - 1, 1) as 1 | 2 | 3)
+        setStep((current) => Math.min(current + 1, 3) as 1 | 2 | 3)
     }
+
     const createStore = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!validate(2)) {
-            setStep(2)
+        if (!validate(1)) {
+            setStep(1)
+            setIsPendingConfirm(false)
             return
         }
+        if (!validate(2)) {
+            setStep(2)
+            setIsPendingConfirm(false)
+            return
+        }
+
+        if (!isPendingConfirm) {
+            setIsPendingConfirm(true)
+            return
+        }
+
         setIsCreating(true)
         window.setTimeout(() => {
             const cleanName = form.name.trim()
@@ -108,8 +142,10 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
             setIsCreating(false)
         }, 700)
     }
+
     const inputClass = (key: keyof StoreForm) =>
         `mt-1.5 w-full rounded-xl border bg-white px-3 py-3 text-sm text-[#172033] outline-none placeholder:text-slate-400 focus:border-[#3dd7af] ${errors[key] ? "border-[#d6503b]" : "border-[#ded9cf]"}`
+
     if (createdStore) {
         return (
             <main className="flex min-h-screen w-full items-center justify-center bg-[#f5f2eb] p-5">
@@ -372,7 +408,10 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
                             {step > 1 ? (
                                 <button
                                     type="button"
-                                    onClick={() => setStep((current) => Math.max(current - 1, 1) as 1 | 2 | 3)}
+                                    onClick={() => {
+                                        setIsPendingConfirm(false) // 이전 단계 이동 시 확인 상태 초기화
+                                        setStep((current) => Math.max(current - 1, 1) as 1 | 2 | 3)
+                                    }}
                                     className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-500 hover:bg-[#f5f2eb]"
                                 >
                                     <ArrowLeftIcon size={15} /> 이전
@@ -394,7 +433,12 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
                                     disabled={isCreating}
                                     className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66] disabled:opacity-60"
                                 >
-                                    {isCreating ? "가게 만드는 중…" : "가게 등록 완료"}{" "}
+                                    {/* 💡 수정: 첫 터치 시 '정말 등록하시겠습니까?' 문구 유도 */}
+                                    {isCreating
+                                        ? "가게 만드는 중…"
+                                        : isPendingConfirm
+                                          ? "정말 등록하시겠습니까?"
+                                          : "가게 등록 완료"}{" "}
                                     {!isCreating && <CheckIcon size={15} />}
                                 </button>
                             )}
@@ -405,6 +449,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
         </main>
     )
 }
+
 function Field({
     label,
     error,
@@ -430,6 +475,7 @@ function Field({
         </label>
     )
 }
+
 function Detail({ label, value, className }: { label: string; value: string; className?: string }) {
     return (
         <div className={className}>

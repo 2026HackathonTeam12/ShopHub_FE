@@ -11,7 +11,7 @@ function AppRoutes() {
     const navigate = useNavigate()
     const [stores, setStores] = useState<StoreProfile[]>(initialStores)
     const [selectedStoreId, setSelectedStoreId] = useState<string>(initialStores[0]?.id || "")
-    const [initialStoreStep, setInitialStoreStep] = useState(1)
+    const [initialStoreStep, setInitialStoreStep] = useState<1 | 2 | 3>(1)
 
     const addStore = (newStore: StoreProfile) => {
         setStores((current) => [...current, newStore])

@@ -1,102 +1,107 @@
 import { useState } from "react"
-import reactLogo from "./assets/react.svg"
-import viteLogo from "./assets/vite.svg"
-import heroImg from "./assets/hero.png"
-import "./styles/global.css"
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
+import { initialStores, type StoreProfile } from "./data/store"
+import { AuthPage } from "./features/auth/pages/AuthPage"
+import { StoreOnboarding } from "./features/store/pages/StoreOnboarding"
+import { WorkspaceShell } from "./components/layout/WorkspaceShell"
 
-function App() {
-    const [count, setCount] = useState(0)
+type AuthMode = "login" | "signup"
+
+function AppRoutes() {
+    const navigate = useNavigate()
+    const [stores, setStores] = useState<StoreProfile[]>(initialStores)
+    const [selectedStoreId, setSelectedStoreId] = useState<string>(initialStores[0]?.id || "")
+    const [initialStoreStep, setInitialStoreStep] = useState(1)
+
+    const addStore = (newStore: StoreProfile) => {
+        setStores((current) => [...current, newStore])
+        setSelectedStoreId(newStore.id)
+        navigate("/dashboard")
+    }
+
+    const logout = () => {
+        setStores([])
+        setSelectedStoreId("")
+        navigate("/login")
+    }
+
+    const hasStores = stores.length > 0
+    const homeDestination = hasStores ? "/dashboard" : "/login"
+
+    const workspaceProps = {
+        stores,
+        selectedStoreId,
+        onSelectStore: setSelectedStoreId,
+        onAddStore: () => {
+            setInitialStoreStep(1)
+            navigate("/stores/new")
+        },
+        onLogout: logout,
+    }
 
     return (
-        <>
-            <section id="center">
-                <div className="hero">
-                    <img src={heroImg} className="base" width="170" height="179" alt="" />
-                    <img src={reactLogo} className="framework" alt="React logo" />
-                    <img src={viteLogo} className="vite" alt="Vite logo" />
-                </div>
-                <div>
-                    <h1>Get started</h1>
-                    <p>
-                        Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-                    </p>
-                </div>
-                <button type="button" className="counter" onClick={() => setCount((count) => count + 1)}>
-                    Count is {count}
-                </button>
-            </section>
-
-            <div className="ticks"></div>
-
-            <section id="next-steps">
-                <div id="docs">
-                    <svg className="icon" role="presentation" aria-hidden="true">
-                        <use href="/icons.svg#documentation-icon"></use>
-                    </svg>
-                    <h2>Documentation</h2>
-                    <p>Your questions, answered</p>
-                    <ul>
-                        <li>
-                            <a href="https://vite.dev/" target="_blank">
-                                <img className="logo" src={viteLogo} alt="" />
-                                Explore Vite
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://react.dev/" target="_blank">
-                                <img className="button-icon" src={reactLogo} alt="" />
-                                Learn more
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div id="social">
-                    <svg className="icon" role="presentation" aria-hidden="true">
-                        <use href="/icons.svg#social-icon"></use>
-                    </svg>
-                    <h2>Connect with us</h2>
-                    <p>Join the Vite community</p>
-                    <ul>
-                        <li>
-                            <a href="https://github.com/vitejs/vite" target="_blank">
-                                <svg className="button-icon" role="presentation" aria-hidden="true">
-                                    <use href="/icons.svg#github-icon"></use>
-                                </svg>
-                                GitHub
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://chat.vite.dev/" target="_blank">
-                                <svg className="button-icon" role="presentation" aria-hidden="true">
-                                    <use href="/icons.svg#discord-icon"></use>
-                                </svg>
-                                Discord
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://x.com/vite_js" target="_blank">
-                                <svg className="button-icon" role="presentation" aria-hidden="true">
-                                    <use href="/icons.svg#x-icon"></use>
-                                </svg>
-                                X.com
-                            </a>
-                        </li>
-                        <li>
-                            <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                                <svg className="button-icon" role="presentation" aria-hidden="true">
-                                    <use href="/icons.svg#bluesky-icon"></use>
-                                </svg>
-                                Bluesky
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </section>
-
-            <div className="ticks"></div>
-            <section id="spacer"></section>
-        </>
+        <Routes>
+            <Route path="/" element={<Navigate to={homeDestination} replace />} />
+            <Route
+                path="/login"
+                element={
+                    <AuthPage
+                        initialMode="login"
+                        onLogin={() => {
+                            if (stores.length === 0) {
+                                setStores(initialStores)
+                                setSelectedStoreId(initialStores[0].id)
+                            }
+                            navigate("/dashboard")
+                        }}
+                        onSignup={() => {
+                            setStores([])
+                            setSelectedStoreId("")
+                            navigate("/stores/new")
+                        }}
+                        onModeChange={(mode) => navigate(mode === "signup" ? "/signup" : "/login")}
+                    />
+                }
+            />
+            <Route
+                path="/signup"
+                element={
+                    <AuthPage
+                        initialMode="signup"
+                        onLogin={() => navigate("/dashboard")}
+                        onSignup={() => {
+                            setStores([])
+                            setSelectedStoreId("")
+                            navigate("/stores/new")
+                        }}
+                        onModeChange={(mode: AuthMode) => navigate(mode === "signup" ? "/signup" : "/login")}
+                    />
+                }
+            />
+            <Route
+                path="/stores/new"
+                element={
+                    <StoreOnboarding
+                        initialStep={initialStoreStep}
+                        onComplete={addStore}
+                        onCancel={stores.length > 0 ? () => navigate("/dashboard") : undefined}
+                    />
+                }
+            />
+            <Route path="/dashboard" element={<WorkspaceShell {...workspaceProps} />} />
+            <Route path="/content" element={<WorkspaceShell {...workspaceProps} />} />
+            <Route path="/reviews" element={<WorkspaceShell {...workspaceProps} />} />
+            <Route path="/store" element={<WorkspaceShell {...workspaceProps} />} />
+            <Route path="/account" element={<WorkspaceShell {...workspaceProps} />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
     )
 }
 
-export default App
+export default function App() {
+    return (
+        <BrowserRouter>
+            <AppRoutes />
+        </BrowserRouter>
+    )
+}

@@ -1,37 +1,39 @@
 import { useRef, useState } from "react"
 import { CheckIcon, ChevronDownIcon, ImagePlusIcon, Focus, MapPinIcon, SendIcon, SparklesIcon } from "lucide-react"
-import { useSelectedStoreId } from "../../../store"
+import type { LucideIcon } from "lucide-react"
+import { useSelectedStoreId, useIntegrations } from "../../../store"
 import { usePublishContentMutation } from "../../../hooks/useContentMutations"
-const targets = [
-    {
-        name: "Instagram",
-        icon: Focus,
-        color: "bg-[#f2b0bf]",
-    },
-    {
-        name: "네이버 플레이스",
-        icon: MapPinIcon,
-        color: "bg-[#76d1a0]",
-    },
-    {
-        name: "Google Business",
-        icon: MapPinIcon,
-        color: "bg-[#6f9df2]",
-    },
-]
+import type { PlatformId } from "../../../data/platforms"
+import { PLATFORM_META } from "../../../data/platforms"
+
+const PLATFORM_DISPLAY: Partial<Record<PlatformId, { icon: LucideIcon; color: string }>> = {
+    INSTAGRAM: { icon: Focus, color: "bg-[#f2b0bf]" },
+    NAVER_MAP: { icon: MapPinIcon, color: "bg-[#76d1a0]" },
+    GOOGLE_MAP: { icon: MapPinIcon, color: "bg-[#6f9df2]" },
+    MOCK_MAP: { icon: MapPinIcon, color: "bg-[#76d1a0]" },
+    NAVER_BLOG: { icon: MapPinIcon, color: "bg-[#bce8ce]" },
+    FACEBOOK: { icon: MapPinIcon, color: "bg-[#cbdcf6]" },
+    KAKAO_MAP: { icon: MapPinIcon, color: "bg-[#f9e090]" },
+}
+
 export function ContentComposer() {
     const selectedStoreId = useSelectedStoreId()
+    const integrations = useIntegrations()
     const publishMutation = usePublishContentMutation()
     const titleRef = useRef<HTMLInputElement>(null)
     const [body, setBody] = useState(
         "비가 오는 오늘, 따뜻한 라떼 한 잔으로 잠깐 쉬어가세요.\n오후 2시부터는 갓 구운 휘낭시에가 함께 나옵니다."
     )
-    const [selectedTargets, setSelectedTargets] = useState(["Instagram", "네이버 플레이스"])
+    const [selectedTargets, setSelectedTargets] = useState<PlatformId[]>([])
     const [published, setPublished] = useState(false)
-    const toggleTarget = (target: string) =>
+    const toggleTarget = (id: PlatformId) =>
         setSelectedTargets((current) =>
-            current.includes(target) ? current.filter((item) => item !== target) : [...current, target]
+            current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
         )
+    const targets = integrations.flatMap((id) => {
+        const display = PLATFORM_DISPLAY[id]
+        return display ? [{ id, ...display }] : []
+    })
     return (
         <section
             className="overflow-hidden rounded-2xl border border-[#ded9cf] bg-white shadow-[0_8px_24px_rgba(23,32,51,0.05)]"
@@ -102,12 +104,12 @@ export function ContentComposer() {
                     <div className="mt-3 flex flex-wrap gap-2">
                         {targets.map((target) => {
                             const Icon = target.icon
-                            const selected = selectedTargets.includes(target.name)
+                            const selected = selectedTargets.includes(target.id)
                             return (
                                 <button
-                                    key={target.name}
+                                    key={target.id}
                                     type="button"
-                                    onClick={() => toggleTarget(target.name)}
+                                    onClick={() => toggleTarget(target.id)}
                                     aria-pressed={selected}
                                     className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-semibold transition-colors ${selected ? "border-[#20365b] bg-white text-[#172033]" : "border-transparent bg-[#ede9e1] text-slate-400"}`}
                                 >
@@ -116,7 +118,7 @@ export function ContentComposer() {
                                     >
                                         <Icon size={10} className="text-[#172033]" aria-hidden="true" />
                                     </span>
-                                    {target.name}
+                                    {PLATFORM_META[target.id].name}
                                     {selected && <CheckIcon size={12} className="text-[#168165]" aria-hidden="true" />}
                                 </button>
                             )
@@ -147,12 +149,6 @@ export function ContentComposer() {
                             <SendIcon size={16} aria-hidden="true" />
                         )}
                         {published ? "게시 요청을 보냈어요" : publishMutation.loading ? "게시 중…" : "지금 게시하기"}
-                    </button>
-                    <button
-                        type="button"
-                        className="rounded-xl border border-[#d9d5cd] px-3 py-3 text-xs font-bold text-[#42526e] transition-colors hover:bg-[#f7f5f0]"
-                    >
-                        예약
                     </button>
                 </div>
             </div>

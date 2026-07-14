@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { BotIcon, ExternalLinkIcon, SearchIcon, SendIcon, StarIcon } from "lucide-react"
+import { BotIcon, SearchIcon, SendIcon, StarIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
 import { useReviews, useSelectedStoreId } from "../../../store"
 import { getRelativeTime } from "../../../utils/timeUtils"
@@ -61,27 +61,11 @@ export function InboxPage({ storeName }: { storeName: string }) {
     return (
         <>
             <PageHeader
-                eyebrow="Google Places reviews"
+                eyebrow="Customer reviews"
                 title="리뷰"
-                description="Google Places API로 최신 5개 리뷰를 불러왔어요. 전체 리뷰는 Google에서 확인할 수 있습니다."
+                description="고객 리뷰를 확인하고 AI로 답글 초안을 작성하세요."
             />
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#d8e9e1] bg-[#effaf6] px-5 py-4">
-                <div>
-                    <p className="text-sm font-bold text-[#172033]">Google 리뷰 총 128개 · 동기화된 최신 리뷰 5개</p>
-                    <p className="mt-1 text-xs text-slate-600">
-                        API 제한으로 최근 5개만 이곳에서 답글 초안을 만들 수 있어요.
-                    </p>
-                </div>
-                <a
-                    href="https://www.google.com/maps"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 rounded-lg bg-[#172b4d] px-3 py-2 text-xs font-bold text-white hover:bg-[#223b66]"
-                >
-                    <ExternalLinkIcon size={14} />
-                    Google에서 전체 보기
-                </a>
-            </div>
+
             <div className="grid min-h-[620px] overflow-hidden rounded-2xl border border-[#ded9cf] bg-white shadow-sm lg:grid-cols-[330px_minmax(0,1fr)]">
                 <aside className="border-b border-[#eeeae2] lg:border-b-0 lg:border-r">
                     <div className="border-b border-[#eeeae2] p-4">
@@ -94,7 +78,7 @@ export function InboxPage({ storeName }: { storeName: string }) {
                                 placeholder="리뷰 검색"
                             />
                         </label>
-                        <p className="mt-3 text-[11px] font-semibold text-slate-500">최신 동기화 · 5개</p>
+                        <p className="mt-3 text-[11px] font-semibold text-slate-500">최신 동기화 · {reviews.length}개</p>
                     </div>
                     <div className="divide-y divide-[#eeeae2]">
                         {visible.map((review) => (
@@ -127,7 +111,7 @@ export function InboxPage({ storeName }: { storeName: string }) {
                     <section className="flex min-w-0 flex-col">
                         <div className="border-b border-[#eeeae2] px-5 py-4">
                             <h2 className="text-sm font-bold text-[#172033]">{selected.authorName}</h2>
-                            <p className="mt-1 text-[11px] text-slate-500">Google 리뷰 · {getRelativeTime(selected.reviewedAt)}</p>
+                            <p className="mt-1 text-[11px] text-slate-500">{getRelativeTime(selected.reviewedAt)}</p>
                         </div>
                         <div className="flex-1 bg-[#faf9f6] p-5">
                             <article className="max-w-xl rounded-2xl border border-[#e6e1d8] bg-white p-5">

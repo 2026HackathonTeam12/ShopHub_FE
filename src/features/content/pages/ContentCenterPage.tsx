@@ -1,19 +1,19 @@
-import { useState } from "react"
-import { FileTextIcon, PlusIcon, SparklesIcon } from "lucide-react"
+import { useEffect, useState } from "react"
+import { FileTextIcon, PlusIcon, SparklesIcon, XIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
-import { usePosts } from "../../../store"
+import { usePosts, useSelectedStoreId, type Post } from "../../../store"
+import { useFetchDashboardMutation } from "../../../hooks/useDashboardMutations"
 
-const statusStyle: Record<string, string> = {
-    예약됨: "bg-[#edf8f4] text-[#168165]",
-    초안: "bg-[#eef1f7] text-[#42526e]",
-    실패: "bg-[#ffede9] text-[#d6503b]",
-    게시됨: "bg-[#edf8f4] text-[#168165]",
-}
 
 export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
     const posts = usePosts()
-    const [tab, setTab] = useState("전체")
-    const filtered = posts.filter((post) => tab === "전체" || post.status === tab)
+    const selectedStoreId = useSelectedStoreId()
+    const dashboardMutation = useFetchDashboardMutation()
+    const [viewPost, setViewPost] = useState<Post | null>(null)
+
+    useEffect(() => {
+        if (selectedStoreId) dashboardMutation.run(selectedStoreId)
+    }, [selectedStoreId]) // eslint-disable-line react-hooks/exhaustive-deps
     return (
         <>
             <PageHeader
@@ -32,43 +32,29 @@ export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
             />
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_360px]">
                 <section className="overflow-hidden rounded-2xl border border-[#ded9cf] bg-white shadow-sm">
-                    <div className="border-b border-[#eeeae2] px-5 py-4">
-                        <div className="flex gap-1 overflow-x-auto rounded-lg bg-[#f3f0e9] p-1" role="tablist">
-                            {["전체", "초안", "예약됨", "게시됨", "실패"].map((item) => (
-                                <button
-                                    key={item}
-                                    type="button"
-                                    role="tab"
-                                    aria-selected={tab === item}
-                                    onClick={() => setTab(item)}
-                                    className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-[11px] font-bold ${tab === item ? "bg-white text-[#172033] shadow-sm" : "text-slate-500"}`}
-                                >
-                                    {item}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
                     <div className="divide-y divide-[#eeeae2]">
-                        {filtered.map((post) => (
-                            <article key={post.title} className="flex flex-wrap items-center gap-4 px-5 py-4">
+                        {posts.map((post) => (
+                            <article key={post.id} className="flex items-center gap-4 px-5 py-4">
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#e9e2d5] text-[#6b5037]">
                                     <FileTextIcon size={20} />
                                 </div>
-                                <div className="min-w-[180px] flex-1">
-                                    <h2 className="text-sm font-bold text-[#172033]">{post.title}</h2>
-                                    <p className="mt-1 text-xs text-slate-500">
-                                        {post.channels} · {post.date}
-                                    </p>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h2 className="text-sm font-bold text-[#172033]">{post.title}</h2>
+                                        {post.channels.split(" · ").map((ch) => (
+                                            <span key={ch} className="rounded-md bg-[#eef1f7] px-2 py-0.5 text-xs font-bold text-[#42526e]">
+                                                {ch}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <p className="mt-1 text-xs text-slate-500">{post.date}</p>
                                 </div>
-                                <span className={`rounded-md px-2 py-1 text-[10px] font-bold ${statusStyle[post.status] ?? ""}`}>
-                                    {post.status}
-                                </span>
                                 <button
                                     type="button"
-                                    onClick={onCompose}
-                                    className="rounded-lg border border-[#ded9cf] px-2.5 py-1.5 text-[11px] font-bold text-[#42526e] hover:bg-[#f7f5f0]"
+                                    onClick={() => setViewPost(post)}
+                                    className="shrink-0 rounded-lg border border-[#ded9cf] px-2.5 py-1.5 text-[11px] font-bold text-[#42526e] hover:bg-[#f7f5f0]"
                                 >
-                                    다시 작성
+                                    보기
                                 </button>
                             </article>
                         ))}
@@ -86,7 +72,7 @@ export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
                             </div>
                         </div>
                         <p className="mt-5 text-sm font-bold leading-6">
-                            연남동 비 오는 오후, 창가 자리와 라떼를 담아보세요.
+                            {dashboardMutation.card?.message ?? ""}
                         </p>
                         <p className="mt-2 text-xs leading-5 text-[#c5d3eb]">
                             가게 정보와 오늘의 맥락을 이용해 초안을 만들 수 있어요.
@@ -102,6 +88,41 @@ export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
                     </section>
                 </aside>
             </div>
+            {viewPost && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+                    onClick={() => setViewPost(null)}
+                >
+                    <div
+                        className="w-full max-w-md rounded-2xl border border-[#ded9cf] bg-white p-6 shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between gap-3">
+                            <h2 className="text-base font-bold text-[#172033]">{viewPost.title}</h2>
+                            <div className="flex shrink-0 items-center gap-2">
+                                <span className="text-xs text-slate-400">{viewPost.date}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewPost(null)}
+                                    className="rounded-lg p-1 text-slate-400 hover:bg-[#f7f5f0]"
+                                >
+                                    <XIcon size={18} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                            {viewPost.channels.split(" · ").map((ch) => (
+                                <span key={ch} className="rounded-md bg-[#eef1f7] px-2 py-0.5 text-xs font-bold text-[#42526e]">
+                                    {ch}
+                                </span>
+                            ))}
+                        </div>
+                        <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[#42526e]">
+                            {viewPost.body}
+                        </p>
+                    </div>
+                </div>
+            )}
         </>
     )
 }

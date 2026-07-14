@@ -23,3 +23,4 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         </StoresProvider>
     )
 }
+

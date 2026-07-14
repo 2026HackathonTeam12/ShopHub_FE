@@ -1,4 +1,6 @@
 import { LayoutDashboardIcon, MegaphoneIcon, MessageSquareTextIcon, StoreIcon, UserRoundIcon } from "lucide-react"
+import { useUser } from "../../store"
+import { getInitials } from "../../utils/storeUtils"
 export const navigationItems = [
     {
         label: "대시보드",
@@ -14,7 +16,6 @@ export const navigationItems = [
         label: "리뷰",
         path: "/reviews",
         icon: MessageSquareTextIcon,
-        badge: 8,
     },
     {
         label: "가게 정보",
@@ -27,6 +28,7 @@ type SidebarProps = {
     onNavigate: (path: string) => void
 }
 export function Sidebar({ activePath, onNavigate }: SidebarProps) {
+    const user = useUser()
     return (
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-[#101a30] px-4 py-5 lg:flex">
             <button
@@ -63,10 +65,10 @@ export function Sidebar({ activePath, onNavigate }: SidebarProps) {
                     className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${activePath === "/account" ? "bg-white/10" : "hover:bg-white/5"}`}
                 >
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e7c8a0] text-xs font-extrabold text-[#392d24]">
-                        JI
+                        {getInitials(user?.name ?? "")}
                     </span>
                     <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xs font-semibold text-white">김지인</span>
+                        <span className="block truncate text-xs font-semibold text-white">{user?.name ?? ""}</span>
                         <span className="block truncate text-[11px] text-slate-500">내 계정 관리</span>
                     </span>
                     <UserRoundIcon size={16} className="text-slate-400" aria-hidden="true" />

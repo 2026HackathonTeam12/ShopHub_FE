@@ -9,6 +9,12 @@ import {
     StoreIcon,
 } from "lucide-react"
 import { useCreateStoreMutation } from "../../../hooks/useStoreMutations"
+import { useSelectedStoreId } from "../../../store"
+import { startOAuth } from "../../../api"
+import type { PlatformId } from "../../../data/platforms"
+import { PLATFORM_META } from "../../../data/platforms"
+
+const SNS_PLATFORM_IDS: PlatformId[] = ["INSTAGRAM", "FACEBOOK", "NAVER_BLOG"]
 
 type Step = 1 | 2 | 3 | 4
 type StoreOnboardingProps = {
@@ -32,12 +38,6 @@ const tones = [
     "전문적이고 신뢰감 있는",
     "정갈하고 차분한",
 ]
-const accentOptions = [
-    "bg-[#e9c7a7]",
-    "bg-[#b9d9cf]",
-    "bg-[#efd59d]",
-    "bg-[#d7c5ea]",
-]
 
 export function StoreOnboarding({
     initialStep = 1,
@@ -45,9 +45,9 @@ export function StoreOnboarding({
     onCancel,
 }: StoreOnboardingProps) {
     const createStoreMutation = useCreateStoreMutation()
+    const selectedStoreId = useSelectedStoreId()
     const [step, setStep] = useState<Step>(initialStep)
     const [isPendingConfirm, setIsPendingConfirm] = useState(false)
-    const [submitted, setSubmitted] = useState(false)
     const [errors, setErrors] = useState<FieldErrors>({})
     const [form, setForm] = useState<StoreForm>({
         name: "",
@@ -58,11 +58,11 @@ export function StoreOnboarding({
         menu: "",
         tone: tones[0],
     })
+    const [oauthLoading, setOauthLoading] = useState(false)
     const steps = useMemo(
-        () => ["가게 연동", "기본 정보", "운영 정보", "확인"],
+        () => ["기본 정보", "운영 정보", "확인", "가게 연동"],
         [],
     )
-    const [isMapConnected, setIsMapConnected] = useState(false)
 
     const formatPhone = (value: string) => {
         const digits = value.replace(/\D/g, "")
@@ -98,13 +98,8 @@ export function StoreOnboarding({
 
     const validate = (currentStep: number) => {
         const nextErrors: FieldErrors = {}
-        if (currentStep === 1) {
-            if (!isMapConnected) {
-                return false
-            }
-        }
 
-        if (currentStep === 2) {
+        if (currentStep === 1) {
             if (form.name.trim().length < 2)
                 nextErrors.name = "가게 이름을 2자 이상 입력해 주세요."
 
@@ -112,7 +107,7 @@ export function StoreOnboarding({
                 nextErrors.address = "고객이 찾을 수 있는 주소를 입력해 주세요."
         }
 
-        if (currentStep === 3) {
+        if (currentStep === 2) {
             if (!/^[0-9-]{9,14}$/.test(form.phone.replace(/\s/g, "")))
                 nextErrors.phone = "대표 전화번호를 확인해 주세요."
 
@@ -129,7 +124,7 @@ export function StoreOnboarding({
 
     const next = () => {
         if (!validate(step)) return
-        setStep((current) => Math.max(current - 1, 1) as Step)
+        setStep((current) => Math.min(current + 1, 4) as Step)
     }
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -151,56 +146,25 @@ export function StoreOnboarding({
         }
 
         const ok = await createStoreMutation.run(form)
-        if (ok) setSubmitted(true)
+        if (ok) {
+            setStep(4)
+        }
+    }
+
+    const handleOAuth = async () => {
+        if (!selectedStoreId) return
+        setOauthLoading(true)
+        try {
+            const url = await startOAuth("MOCK_MAP", selectedStoreId)
+            window.location.href = url
+        } catch {
+            setOauthLoading(false)
+        }
     }
 
     const inputClass = (key: keyof StoreForm) =>
         `mt-1.5 w-full rounded-xl border bg-white px-3 py-3 text-sm text-[#172033] outline-none placeholder:text-slate-400 focus:border-[#3dd7af] ${errors[key] ? "border-[#d6503b]" : "border-[#ded9cf]"}`
 
-    if (submitted) {
-        const menuNames = form.menu
-            .split(",")
-            .map((m) => m.trim())
-            .filter(Boolean)
-        return (
-            <main className="flex min-h-screen w-full items-center justify-center bg-[#f5f2eb] p-5">
-                <section className="w-full max-w-lg rounded-3xl border border-[#ded9cf] bg-white p-8 text-center shadow-[0_20px_55px_rgba(23,43,77,0.08)] sm:p-10">
-                    <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#eafaf5] text-[#168165]">
-                        <CheckIcon size={30} />
-                    </span>
-                    <p className="font-mono-label mt-6 text-[10px] tracking-[0.15em] text-[#64748b]">
-                        STORE READY
-                    </p>
-                    <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#172033]">
-                        가게 등록을 완료했어요.
-                    </h1>
-                    <p className="mt-3 text-sm leading-6 text-slate-500">
-                        <strong className="text-[#172033]">
-                            {form.name.trim()}
-                        </strong>
-                        의 기본 정보를 저장했어요. 이제 이 가게의 메뉴와 말투를
-                        담은 콘텐츠 초안을 바로 만들 수 있습니다.
-                    </p>
-                    <div className="mt-6 rounded-2xl bg-[#f0faf6] p-4 text-left">
-                        <p className="text-xs font-bold text-[#168165]">
-                            AI 초안에 반영되는 정보
-                        </p>
-                        <p className="mt-2 text-xs leading-5 text-[#42526e]">
-                            {form.address.trim()} · {menuNames.join(" · ")} ·{" "}
-                            {form.tone}
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onComplete}
-                        className="mt-7 inline-flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-5 py-3 text-sm font-bold text-white hover:bg-[#223b66]"
-                    >
-                        내 가게로 시작하기 <ArrowRightIcon size={17} />
-                    </button>
-                </section>
-            </main>
-        )
-    }
     return (
         <main className="min-h-screen w-full bg-[#f5f2eb] px-4 py-6 sm:px-6 sm:py-10">
             <div className="mx-auto max-w-3xl">
@@ -286,171 +250,77 @@ export function StoreOnboarding({
                                     />
                                     <div>
                                         <h2 className="text-base font-bold text-[#172033]">
-                                            가게 운영 플랫폼을 연결해주세요.
+                                            가게의 기본 정보를 입력해 주세요.
                                         </h2>
                                         <p className="mt-1 text-xs text-slate-500">
-                                            MAP OAuth 로그인을 통해 가게 정보를
-                                            불러옵니다.
+                                            이 정보는 콘텐츠 초안과 운영 화면에 사용됩니다.
                                         </p>
                                     </div>
                                 </div>
-
-                                <div className="mt-8 space-y-4 flex flex-col gap-5">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsMapConnected(true)}
-                                        className={`w-full rounded-2xl border p-5 text-left transition
-                ${
-                    isMapConnected
-                        ? "border-[#3dd7af] bg-[#eafaf5]"
-                        : "border-[#ded9cf] hover:border-[#3dd7af]"
-                }`}
+                                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                                    <Field
+                                        label="가게 이름"
+                                        error={errors.name}
+                                        className="sm:col-span-2"
                                     >
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="font-bold text-[#172033]">
-                                                    MAP
-                                                </p>
-
-                                                <p className="mt-1 text-xs text-slate-500">
-                                                    가게 운영 플랫폼
-                                                </p>
-                                            </div>
-
-                                            {isMapConnected ? (
-                                                <span className="rounded-full bg-[#3dd7af] px-3 py-1 text-xs font-bold">
-                                                    연결 완료
-                                                </span>
-                                            ) : (
-                                                <span className="rounded-xl bg-[#172b4d] px-4 py-2 text-xs font-bold text-white">
-                                                    OAuth 로그인
-                                                </span>
-                                            )}
+                                        <input
+                                            value={form.name}
+                                            onChange={(event) =>
+                                                update("name", event.target.value)
+                                            }
+                                            className={inputClass("name")}
+                                            placeholder="예: 모모 커피"
+                                        />
+                                    </Field>
+                                    <Field label="업종">
+                                        <input
+                                            value={form.category}
+                                            onChange={(event) =>
+                                                update("category", event.target.value)
+                                            }
+                                            className={inputClass("category")}
+                                            placeholder="예: 카페 · 디저트"
+                                        />
+                                    </Field>
+                                    <Field label="주소" error={errors.address}>
+                                        <input
+                                            value={form.address}
+                                            onChange={(event) =>
+                                                update("address", event.target.value)
+                                            }
+                                            className={inputClass("address")}
+                                            placeholder="예: 서울 마포구 연남동"
+                                        />
+                                    </Field>
+                                    <fieldset className="sm:col-span-2">
+                                        <legend className="text-xs font-bold text-[#42526e]">
+                                            가게의 말투
+                                        </legend>
+                                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                            {tones.map((tone) => (
+                                                <label
+                                                    key={tone}
+                                                    className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold ${form.tone === tone ? "border-[#91d9c4] bg-[#eafaf5] text-[#168165]" : "border-[#ded9cf] text-[#42526e]"}`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="tone"
+                                                        value={tone}
+                                                        checked={form.tone === tone}
+                                                        onChange={(event) =>
+                                                            update("tone", event.target.value)
+                                                        }
+                                                        className="h-4 w-4 accent-[#168165]"
+                                                    />
+                                                    {tone}
+                                                </label>
+                                            ))}
                                         </div>
-                                    </button>
-
-                                    <div className="w-full border-t border-[#ded9cf]" />
-
-                                    <div className="flex flex-col gap-2">
-                                        <p className="font-semibold text-sm text-slate-500">
-                                            SNS 연동
-                                        </p>
-                                        <div className="grid gap-3 sm:grid-cols-3">
-                                            <div className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4 opacity-60">
-                                                <p className="font-semibold">
-                                                    Instagram
-                                                </p>
-                                                <p className="mt-1 text-xs text-slate-500">
-                                                    Coming Soon
-                                                </p>
-                                            </div>
-
-                                            <div className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4 opacity-60">
-                                                <p className="font-semibold">
-                                                    Facebook
-                                                </p>
-                                                <p className="mt-1 text-xs text-slate-500">
-                                                    Coming Soon
-                                                </p>
-                                            </div>
-
-                                            <div className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4 opacity-60">
-                                                <p className="font-semibold">
-                                                    Naver Blog
-                                                </p>
-                                                <p className="mt-1 text-xs text-slate-500">
-                                                    Coming Soon
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </fieldset>
                                 </div>
                             </div>
                         )}
                         {step === 2 && (
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <StoreIcon
-                                        size={18}
-                                        className="text-[#42526e]"
-                                    />
-                                    <div>
-                                        <h2 className="text-base font-bold text-[#172033]">
-                                            가게 운영 플랫폼을 연결해주세요.
-                                        </h2>
-                                        <p className="mt-1 text-xs text-slate-500">
-                                            MAP OAuth 로그인을 통해 가게 정보를
-                                            불러옵니다.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="mt-8 space-y-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsMapConnected(true)}
-                                        className={`w-full rounded-2xl border p-5 text-left transition
-                ${
-                    isMapConnected
-                        ? "border-[#3dd7af] bg-[#eafaf5]"
-                        : "border-[#ded9cf] hover:border-[#3dd7af]"
-                }`}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="font-bold text-[#172033]">
-                                                    MAP
-                                                </p>
-
-                                                <p className="mt-1 text-xs text-slate-500">
-                                                    가게 운영 플랫폼
-                                                </p>
-                                            </div>
-
-                                            {isMapConnected ? (
-                                                <span className="rounded-full bg-[#3dd7af] px-3 py-1 text-xs font-bold">
-                                                    연결 완료
-                                                </span>
-                                            ) : (
-                                                <span className="rounded-xl bg-[#172b4d] px-4 py-2 text-xs font-bold text-white">
-                                                    OAuth 로그인
-                                                </span>
-                                            )}
-                                        </div>
-                                    </button>
-
-                                    <div className="grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4 opacity-60">
-                                            <p className="font-semibold">
-                                                Instagram
-                                            </p>
-                                            <p className="mt-1 text-xs text-slate-500">
-                                                Coming Soon
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4 opacity-60">
-                                            <p className="font-semibold">
-                                                Facebook
-                                            </p>
-                                            <p className="mt-1 text-xs text-slate-500">
-                                                Coming Soon
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4 opacity-60">
-                                            <p className="font-semibold">
-                                                Naver Blog
-                                            </p>
-                                            <p className="mt-1 text-xs text-slate-500">
-                                                Coming Soon
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        {step === 3 && (
                             <div>
                                 <div className="flex items-center gap-2">
                                     <Clock3Icon
@@ -526,42 +396,11 @@ export function StoreOnboarding({
                                             placeholder="예: 바질 파스타, 제철 샐러드, 와인 페어링"
                                         />
                                     </Field>
-                                    <fieldset className="sm:col-span-2">
-                                        <legend className="text-xs font-bold text-[#42526e]">
-                                            가게의 말투
-                                        </legend>
-                                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                                            {tones.map((tone) => (
-                                                <label
-                                                    key={tone}
-                                                    className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-3 text-xs font-bold ${form.tone === tone ? "border-[#91d9c4] bg-[#eafaf5] text-[#168165]" : "border-[#ded9cf] text-[#42526e]"}`}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="tone"
-                                                        value={tone}
-                                                        checked={
-                                                            form.tone === tone
-                                                        }
-                                                        onChange={(event) =>
-                                                            update(
-                                                                "tone",
-                                                                event.target
-                                                                    .value,
-                                                            )
-                                                        }
-                                                        className="h-4 w-4 accent-[#168165]"
-                                                    />
-                                                    {tone}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </fieldset>
                                 </div>
                             </div>
                         )}
 
-                        {step === 4 && (
+                        {step === 3 && (
                             <div>
                                 <div className="flex items-center gap-2">
                                     <SparklesIcon
@@ -619,18 +458,80 @@ export function StoreOnboarding({
                             </div>
                         )}
 
+                        {step === 4 && (
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <StoreIcon
+                                        size={18}
+                                        className="text-[#42526e]"
+                                    />
+                                    <div>
+                                        <h2 className="text-base font-bold text-[#172033]">
+                                            가게 운영 플랫폼을 연결해주세요.
+                                        </h2>
+                                        <p className="mt-1 text-xs text-slate-500">
+                                            MAP OAuth 로그인을 통해 가게 정보를
+                                            불러옵니다.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 flex flex-col gap-5">
+                                    <button
+                                        type="button"
+                                        disabled={oauthLoading}
+                                        onClick={handleOAuth}
+                                        className="w-full rounded-2xl border border-[#ded9cf] p-5 text-left transition hover:border-[#3dd7af] disabled:cursor-default disabled:opacity-60"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="font-bold text-[#172033]">
+                                                    {PLATFORM_META.MOCK_MAP.name}
+                                                </p>
+
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    가게 운영 플랫폼
+                                                </p>
+                                            </div>
+
+                                            <span className="rounded-xl bg-[#172b4d] px-4 py-2 text-xs font-bold text-white">
+                                                {oauthLoading ? "연결 중…" : "OAuth 로그인"}
+                                            </span>
+                                        </div>
+                                    </button>
+
+                                    <div className="w-full border-t border-[#ded9cf]" />
+
+                                    <div className="flex flex-col gap-2">
+                                        <p className="font-semibold text-sm text-slate-500">
+                                            SNS 연동
+                                        </p>
+                                        <div className="grid gap-3 sm:grid-cols-3">
+                                            {SNS_PLATFORM_IDS.map((id) => (
+                                                <div key={id} className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4 opacity-60">
+                                                    <p className="font-semibold">
+                                                        {PLATFORM_META[id].name}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-slate-500">
+                                                        Coming Soon
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="mt-8 flex items-center justify-between border-t border-[#eeeae2] pt-5">
-                            {step > 1 ? (
+                            {step > 1 && step < 4 ? (
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setIsPendingConfirm(false)
                                         setStep(
                                             (current) =>
-                                                Math.max(current - 1, 1) as
-                                                    | 1
-                                                    | 2
-                                                    | 3,
+                                                Math.max(current - 1, 1) as Step,
                                         )
                                     }}
                                     className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-bold text-slate-500 hover:bg-[#f5f2eb]"
@@ -640,7 +541,7 @@ export function StoreOnboarding({
                             ) : (
                                 <span />
                             )}
-                            {step < 4 ? (
+                            {step < 3 ? (
                                 <button
                                     type="button"
                                     onClick={next}
@@ -648,7 +549,7 @@ export function StoreOnboarding({
                                 >
                                     다음 <ArrowRightIcon size={15} />
                                 </button>
-                            ) : (
+                            ) : step === 3 ? (
                                 <button
                                     type="submit"
                                     disabled={createStoreMutation.loading}
@@ -662,6 +563,14 @@ export function StoreOnboarding({
                                     {!createStoreMutation.loading && (
                                         <CheckIcon size={15} />
                                     )}
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={onComplete}
+                                    className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66]"
+                                >
+                                    완료 <CheckIcon size={15} />
                                 </button>
                             )}
                         </div>

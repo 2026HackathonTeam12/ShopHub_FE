@@ -1,5 +1,12 @@
 import { createMutationHook } from "./createMutationHook"
-import { loginAndFetchStores, signUp, type AuthResponse, type LoginRequest, type SignUpRequest } from "../api"
+import {
+    fetchCurrentUser,
+    loginAndFetchStores,
+    signUp,
+    type AuthResponse,
+    type LoginRequest,
+    type SignUpRequest,
+} from "../api"
 import { useSetStores, useSetSelectedStoreId, useSetUser } from "../store"
 import type { StoreProfile } from "../data/store"
 import type { UserProfile } from "../store"
@@ -33,5 +40,17 @@ export const useSignupMutation = createMutationHook<SignUpRequest, AuthResponse>
     .update((auth, { setUser }) => {
         setUser(auth.user)
         // stores remain empty after signup — user proceeds to onboarding
+    })
+    .build()
+
+export const useFetchUserMutation = createMutationHook<void, UserProfile>()
+    .state(() => {
+        const setUser = useSetUser()
+        return { setUser }
+    })
+    .request(() => undefined)
+    .api(() => fetchCurrentUser())
+    .update((user, { setUser }) => {
+        setUser(user)
     })
     .build()

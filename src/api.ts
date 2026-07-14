@@ -1,5 +1,6 @@
 import type { StoreProfile, BusinessHour } from "./data/store"
 import type { Review } from "./store/ReviewContext"
+import type { PlatformId } from "./data/platforms"
 
 const BASE_URL = "http://localhost:8080"
 
@@ -84,6 +85,10 @@ export async function signUp(req: SignUpRequest): Promise<AuthResponse> {
     })
     setAccessToken(auth.accessToken)
     return auth
+}
+
+export async function fetchCurrentUser(): Promise<UserProfile> {
+    return request<UserProfile>("/v1/auth/me")
 }
 
 // ── Stores ────────────────────────────────────────────────────────────────────
@@ -186,6 +191,17 @@ export async function addStoreMenu(req: AddMenuRequest): Promise<StoreProfile> {
     })
 }
 
+export interface DeleteMenuRequest {
+    storeId: string
+    menuId: string
+}
+
+export async function deleteStoreMenu(req: DeleteMenuRequest): Promise<StoreProfile> {
+    return request<StoreProfile>(`/v1/stores/${req.storeId}/profile/menus/${req.menuId}`, {
+        method: "DELETE",
+    })
+}
+
 // ── Content ───────────────────────────────────────────────────────────────────
 
 export interface GenerateContentRequest {
@@ -196,13 +212,14 @@ export interface GenerateContentRequest {
 export interface ContentSuggestion {
     title: string
     body: string
+    source: string
 }
 
 export async function generateContentDraft(req: GenerateContentRequest): Promise<ContentSuggestion> {
     const { storeId, ...body } = req
-    return request<ContentSuggestion>(`/v1/stores/${storeId}/contents`, {
+    return request<ContentSuggestion>(`/v1/stores/${storeId}/contents/suggest`, {
         method: "POST",
-        body: JSON.stringify({ ...body, aiSuggest: true }),
+        body: JSON.stringify(body),
     })
 }
 
@@ -227,7 +244,7 @@ export async function publishContent(req: PublishContentRequest): Promise<Conten
     const { storeId, ...body } = req
     return request<ContentItem>(`/v1/stores/${storeId}/contents`, {
         method: "POST",
-        body: JSON.stringify({ ...body, aiSuggest: false }),
+        body: JSON.stringify(body),
     })
 }
 
@@ -245,4 +262,32 @@ export interface DashboardSuggestionCard {
 
 export async function fetchDashboard(storeId: string): Promise<{ suggestionCard: DashboardSuggestionCard }> {
     return request(`/v1/stores/${storeId}/dashboard`)
+}
+
+// ── Integrations ───────────────────────────────────────────────────────────────
+
+export interface OAuthConnectionStatus {
+    type: string
+    credentialsConfigured: boolean
+    connected: boolean
+    clientId: string | null
+    placeId: string | null
+    placeName: string | null
+    updatedAt: string | null
+}
+
+export async function fetchOAuthStatus(storeId: string): Promise<OAuthConnectionStatus[]> {
+    return request(`/api/integrations/oauth/status?storeId=${storeId}`)
+}
+
+export async function startOAuth(platformId: PlatformId, storeId: string): Promise<string> {
+    const headers: Record<string, string> = {}
+    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`
+    const response = await fetch(`${BASE_URL}/api/integrations/${platformId}/oauth/start?storeId=${storeId}`, {
+        headers,
+        redirect: "manual",
+    })
+    const location = response.headers.get("Location")
+    if (!location) throw new Error("OAuth 시작 URL을 받지 못했습니다.")
+    return location
 }

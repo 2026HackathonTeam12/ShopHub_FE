@@ -1,5 +1,13 @@
 import { useState } from "react"
-import { CheckIcon, LogOutIcon, MailIcon, PlusIcon, ShieldCheckIcon, StoreIcon, UserRoundIcon } from "lucide-react"
+import {
+    CheckIcon,
+    LogOutIcon,
+    MailIcon,
+    PlusIcon,
+    ShieldCheckIcon,
+    StoreIcon,
+    UserRoundIcon,
+} from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
 import type { StoreProfile } from "../../../data/store"
 import { getAccent, getInitials } from "../../../utils/storeUtils"
@@ -11,7 +19,12 @@ type MyPageProps = {
     onAddStore: () => void
     onLogout: () => void
 }
-export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps) {
+export function MyPage({
+    store,
+    storeCount,
+    onAddStore,
+    onLogout,
+}: MyPageProps) {
     const user = useUser()
     const [saved, setSaved] = useState(false)
     const save = () => {
@@ -48,10 +61,17 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
                 <div className="space-y-6">
                     <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm">
                         <div className="flex items-center gap-2">
-                            <UserRoundIcon size={18} className="text-[#42526e]" />
+                            <UserRoundIcon
+                                size={18}
+                                className="text-[#42526e]"
+                            />
                             <div>
-                                <h2 className="text-base font-bold">운영자 프로필</h2>
-                                <p className="mt-0.5 text-xs text-slate-500">ShopHub에서 사용하는 개인 정보입니다.</p>
+                                <h2 className="text-base font-bold">
+                                    운영자 프로필
+                                </h2>
+                                <p className="mt-0.5 text-xs text-slate-500">
+                                    ShopHub에서 사용하는 개인 정보입니다.
+                                </p>
                             </div>
                         </div>
                         <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -66,33 +86,57 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
                             </button>
                         </div>
                         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                            <Field label="이름" defaultValue={user?.name ?? ""} />
-                            <Field label="휴대폰 번호" defaultValue="" />
-                            <div className="sm:col-span-2">
-                                <Field label="이메일" defaultValue={user?.email ?? ""} />
-                            </div>
+                            <Field
+                                label="이름"
+                                defaultValue={user?.name ?? ""}
+                            />
+                            <Field
+                                label="이메일"
+                                defaultValue={user?.email ?? ""}
+                            />
                         </div>
                     </section>
 
                     <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm">
                         <div className="flex items-center gap-2">
-                            <ShieldCheckIcon size={18} className="text-[#42526e]" />
+                            <ShieldCheckIcon
+                                size={18}
+                                className="text-[#42526e]"
+                            />
                             <div>
-                                <h2 className="text-base font-bold">계정 보안</h2>
-                                <p className="mt-0.5 text-xs text-slate-500">로그인과 인증 방식을 관리합니다.</p>
+                                <h2 className="text-base font-bold">
+                                    계정 보안
+                                </h2>
+                                <p className="mt-0.5 text-xs text-slate-500">
+                                    로그인과 인증 방식을 관리합니다.
+                                </p>
                             </div>
                         </div>
                         <div className="mt-5 divide-y divide-[#eeeae2]">
-                            <Row label="로그인 이메일" value={user?.email ?? ""} action="변경" />
-                            <Row label="비밀번호" value="마지막 변경 2026. 05. 12" action="변경" />
-                            <Row label="2단계 인증" value="사용 안 함" action="설정" />
+                            <Row
+                                label="로그인 이메일"
+                                value={user?.email ?? ""}
+                                action="변경"
+                            />
+                            <Row
+                                label="비밀번호"
+                                value="마지막 변경 2026. 05. 12"
+                                action="변경"
+                            />
+                            <Row
+                                label="2단계 인증"
+                                value="사용 안 함"
+                                action="설정"
+                            />
                         </div>
                     </section>
                 </div>
 
                 <aside className="space-y-6">
                     <section className="rounded-2xl bg-[#172b4d] p-5 text-white">
-                        <p className="font-mono-label text-[9px] tracking-[0.14em] text-[#9edcc9]">MY STORES</p>
+                        <p className="font-mono-label text-[9px] tracking-[0.14em] text-[#9edcc9]">
+                            MY STORES
+                        </p>
                         <div className="mt-4 flex items-center gap-3">
                             <span
                                 className={`flex h-11 w-11 items-center justify-center rounded-xl ${getAccent(store.id)} text-[#172033]`}
@@ -100,8 +144,12 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
                                 <StoreIcon size={20} />
                             </span>
                             <div className="min-w-0">
-                                <h2 className="truncate text-base font-bold">{store.name}</h2>
-                                <p className="mt-1 text-xs text-[#c5d3eb]">사업자 계정 · Owner</p>
+                                <h2 className="truncate text-base font-bold">
+                                    {store.name}
+                                </h2>
+                                <p className="mt-1 text-xs text-[#c5d3eb]">
+                                    사업자 계정 · Owner
+                                </p>
                             </div>
                         </div>
                         <div className="mt-5 border-t border-white/10 pt-4 text-xs leading-5 text-[#c5d3eb]">
@@ -122,13 +170,21 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
                         <div className="flex items-center gap-2">
                             <MailIcon size={18} className="text-[#42526e]" />
                             <div>
-                                <h2 className="text-base font-bold">소식 받기</h2>
-                                <p className="mt-0.5 text-xs text-slate-500">서비스 안내 수신 설정</p>
+                                <h2 className="text-base font-bold">
+                                    소식 받기
+                                </h2>
+                                <p className="mt-0.5 text-xs text-slate-500">
+                                    서비스 안내 수신 설정
+                                </p>
                             </div>
                         </div>
                         <label className="mt-5 flex items-center justify-between rounded-xl bg-[#f7f5f0] px-4 py-3 text-sm font-semibold text-[#42526e]">
                             <span>운영 팁 이메일</span>
-                            <input type="checkbox" defaultChecked className="h-4 w-4 accent-[#168165]" />
+                            <input
+                                type="checkbox"
+                                defaultChecked
+                                className="h-4 w-4 accent-[#168165]"
+                            />
                         </label>
                     </section>
 
@@ -145,7 +201,13 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
         </>
     )
 }
-function Field({ label, defaultValue }: { label: string; defaultValue: string }) {
+function Field({
+    label,
+    defaultValue,
+}: {
+    label: string
+    defaultValue: string
+}) {
     return (
         <label className="block text-xs font-bold text-[#42526e]">
             {label}
@@ -156,14 +218,25 @@ function Field({ label, defaultValue }: { label: string; defaultValue: string })
         </label>
     )
 }
-function Row({ label, value, action }: { label: string; value: string; action: string }) {
+function Row({
+    label,
+    value,
+    action,
+}: {
+    label: string
+    value: string
+    action: string
+}) {
     return (
         <div className="flex items-center gap-3 py-3">
             <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-[#172033]">{label}</p>
                 <p className="mt-1 text-[11px] text-slate-500">{value}</p>
             </div>
-            <button type="button" className="text-xs font-bold text-[#29425b] hover:underline">
+            <button
+                type="button"
+                className="text-xs font-bold text-[#29425b] hover:underline"
+            >
                 {action}
             </button>
         </div>

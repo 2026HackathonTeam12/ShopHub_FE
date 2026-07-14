@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useState } from "react"
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, Store } from "lucide-react"
+import { useLoginMutation, useSignupMutation } from "../../../hooks/useAuthMutations"
 
 type AuthMode = "login" | "signup"
 
@@ -26,22 +27,19 @@ export function AuthPage({ initialMode = "login", onLogin, onSignup, onModeChang
         terms: false,
     })
     const [errors, setErrors] = useState<FormErrors>({})
-    const [isSubmitting, setIsSubmitting] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
-
-    useEffect(() => {
-        setMode(initialMode)
-        setErrors({})
-    }, [initialMode])
+    const loginMutation = useLoginMutation()
+    const signupMutation = useSignupMutation()
+    const isSubmitting = loginMutation.loading || signupMutation.loading
+    const apiError = mode === "login" ? loginMutation.error : signupMutation.error
 
     const switchMode = (nextMode: AuthMode) => {
         setMode(nextMode)
         setErrors({})
-        setIsSubmitting(false)
         onModeChange?.(nextMode)
     }
 
-    const submit = (event: FormEvent<HTMLFormElement>) => {
+    const submit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         const nextErrors: FormErrors = {}
         if (mode === "signup" && values.name.trim().length < 2) {
@@ -58,12 +56,14 @@ export function AuthPage({ initialMode = "login", onLogin, onSignup, onModeChang
         }
         setErrors(nextErrors)
         if (Object.keys(nextErrors).length > 0) return
-        setIsSubmitting(true)
-        window.setTimeout(() => {
-            setIsSubmitting(false)
-            if (mode === "signup") onSignup()
-            else onLogin()
-        }, 700)
+
+        if (mode === "login") {
+            const ok = await loginMutation.run({ email: values.email, password: values.password })
+            if (ok) onLogin()
+        } else {
+            const ok = await signupMutation.run({ email: values.email, password: values.password, name: values.name })
+            if (ok) onSignup()
+        }
     }
 
     const inputClass = (hasError: boolean) =>
@@ -294,6 +294,9 @@ export function AuthPage({ initialMode = "login", onLogin, onSignup, onModeChang
                                 {!isSubmitting && <ArrowRight size={17} />}
                             </button>
                         </form>
+                        {apiError && (
+                            <p className="mt-4 text-center text-[11px] font-medium text-[#d6503b]">{apiError}</p>
+                        )}
                         <p className="mt-6 text-center text-xs text-slate-500">
                             {mode === "login" ? "처음이신가요?" : "이미 ShopHub 계정이 있으신가요?"}{" "}
                             <button

@@ -1,0 +1,1 @@
+/Users/kimsaram32/me/ws/projects/shophub-frontend/AGENT.md

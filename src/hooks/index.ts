@@ -1,0 +1,1 @@
+export { createMutationHook } from "./createMutationHook"

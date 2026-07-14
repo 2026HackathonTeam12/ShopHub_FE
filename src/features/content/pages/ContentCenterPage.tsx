@@ -1,38 +1,17 @@
 import { useState } from "react"
 import { FileTextIcon, PlusIcon, SparklesIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
+import { usePosts } from "../../../store"
 
-const posts = [
-    {
-        title: "비 오는 날, 따뜻한 라떼",
-        channels: "Instagram · 네이버",
-        date: "오늘 16:00",
-        status: "예약됨",
-        style: "bg-[#edf8f4] text-[#168165]",
-    },
-    {
-        title: "연남동 산책 후 들르는 커피",
-        channels: "Instagram · Google",
-        date: "7월 14일",
-        status: "초안",
-        style: "bg-[#eef1f7] text-[#42526e]",
-    },
-    {
-        title: "여름 시즌 라떼 출시",
-        channels: "Google Business",
-        date: "7월 8일",
-        status: "실패",
-        style: "bg-[#ffede9] text-[#d6503b]",
-    },
-    {
-        title: "7월 휴무일 안내",
-        channels: "전 채널",
-        date: "7월 12일",
-        status: "게시됨",
-        style: "bg-[#edf8f4] text-[#168165]",
-    },
-]
+const statusStyle: Record<string, string> = {
+    예약됨: "bg-[#edf8f4] text-[#168165]",
+    초안: "bg-[#eef1f7] text-[#42526e]",
+    실패: "bg-[#ffede9] text-[#d6503b]",
+    게시됨: "bg-[#edf8f4] text-[#168165]",
+}
+
 export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
+    const posts = usePosts()
     const [tab, setTab] = useState("전체")
     const filtered = posts.filter((post) => tab === "전체" || post.status === tab)
     return (
@@ -81,7 +60,7 @@ export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
                                         {post.channels} · {post.date}
                                     </p>
                                 </div>
-                                <span className={`rounded-md px-2 py-1 text-[10px] font-bold ${post.style}`}>
+                                <span className={`rounded-md px-2 py-1 text-[10px] font-bold ${statusStyle[post.status] ?? ""}`}>
                                     {post.status}
                                 </span>
                                 <button

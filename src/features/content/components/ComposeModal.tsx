@@ -1,4 +1,5 @@
 import { useEffect, useState, useId } from "react"
+import { useGenerateContentDraftMutation, usePublishContentMutation } from "../../../hooks/useContentMutations"
 import {
     CalendarClockIcon,
     CheckIcon,
@@ -11,10 +12,11 @@ import {
     XIcon,
 } from "lucide-react"
 type StoreContext = {
+    id: string
     name: string
-    neighborhood: string
+    address: string
     menu: string
-    tone: string
+    toneOfVoice: string
 }
 const channels = [
     {
@@ -47,7 +49,9 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
     const [schedule, setSchedule] = useState("지금 게시")
     const [imageAdded, setImageAdded] = useState(false)
     const [published, setPublished] = useState(false)
-    const [generating, setGenerating] = useState(false)
+    const generateDraftMutation = useGenerateContentDraftMutation()
+    const publishMutation = usePublishContentMutation()
+
     useEffect(() => {
         if (!open) return
         const handleEscape = (event: KeyboardEvent) => {
@@ -56,10 +60,11 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
         window.addEventListener("keydown", handleEscape)
         return () => window.removeEventListener("keydown", handleEscape)
     }, [onClose, open])
+
     useEffect(() => {
         if (!open) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setPublished(false)
-            setGenerating(false)
             setIntent("")
             setTitle("")
             setBody("")
@@ -67,27 +72,28 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
             setSchedule("지금 게시")
         }
     }, [open])
+
     if (!open) return null
-    const generateDraft = () => {
-        setGenerating(true)
-        window.setTimeout(() => {
-            const focus = intent.trim() || "비 오는 날, 따뜻한 음료와 오늘의 공간"
-            setTitle(`${store.name}의 오늘 이야기`)
-            setBody(
-                `${store.neighborhood}에 머무는 오후, ${store.menu}과 함께 잠깐 쉬어가세요.\n\n${focus}를 담아 오늘도 편안한 한 잔을 준비했습니다. ${store.name}에서 천천히 만나 뵐게요.`
-            )
-            setGenerating(false)
-        }, 700)
+
+    const generateDraft = async () => {
+        const result = await generateDraftMutation.run({ storeId: store.id, eventText: intent.trim() })
+        if (result) {
+            setTitle(result.title)
+            setBody(result.body)
+        }
     }
     const toggleChannel = (channel: string) => {
         setSelectedChannels((current) =>
             current.includes(channel) ? current.filter((item) => item !== channel) : [...current, channel]
         )
     }
-    const publish = () => {
+    const publish = async () => {
         if (!body.trim() || selectedChannels.length === 0) return
-        setPublished(true)
-        window.setTimeout(onClose, 1500)
+        const ok = await publishMutation.run({ storeId: store.id, title, body, channels: selectedChannels })
+        if (ok) {
+            setPublished(true)
+            window.setTimeout(onClose, 1500)
+        }
     }
     return (
         <div
@@ -138,8 +144,8 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                 <p className="text-xs font-extrabold">AI가 가져오는 가게 정보</p>
                             </div>
                             <p className="mt-2 text-xs leading-5 text-[#42526e]">
-                                <strong>{store.name}</strong> · {store.neighborhood} · 대표 메뉴 {store.menu} · 목소리:{" "}
-                                {store.tone}
+                                <strong>{store.name}</strong> · {store.address} · 대표 메뉴 {store.menu} · 목소리:{" "}
+                                {store.toneOfVoice}
                             </p>
                         </div>
 
@@ -158,14 +164,17 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                 <button
                                     type="button"
                                     onClick={generateDraft}
-                                    disabled={generating}
+                                    disabled={generateDraftMutation.loading}
                                     className="flex items-center justify-center gap-1.5 rounded-lg bg-[#3dd7af] px-4 py-2.5 text-xs font-bold text-[#10213b] disabled:opacity-60"
                                 >
                                     <WandSparklesIcon size={14} />
-                                    {generating ? "초안 작성 중…" : "AI 초안 만들기"}
+                                    {generateDraftMutation.loading ? "초안 작성 중…" : "AI 초안 만들기"}
                                 </button>
                             </div>
                         </div>
+                        {generateDraftMutation.error && (
+                            <p className="mt-2 text-sm font-medium text-[#d6503b]">{generateDraftMutation.error}</p>
+                        )}
 
                         <label className="mt-5 block text-xs font-bold text-[#42526e]">
                             제목
@@ -248,15 +257,20 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                         >
                             취소
                         </button>
-                        <button
-                            type="button"
-                            onClick={publish}
-                            disabled={!body.trim() || selectedChannels.length === 0}
-                            className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66] disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            <SendIcon size={15} />
-                            {schedule === "지금 게시" ? "게시하기" : "예약하기"}
-                        </button>
+                        <div className="flex flex-col items-end gap-1">
+                            {publishMutation.error && (
+                                <p className="text-[11px] font-medium text-[#d6503b]">{publishMutation.error}</p>
+                            )}
+                            <button
+                                type="button"
+                                onClick={publish}
+                                disabled={!body.trim() || selectedChannels.length === 0 || publishMutation.loading}
+                                className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                <SendIcon size={15} />
+                                {publishMutation.loading ? "게시 중…" : schedule === "지금 게시" ? "게시하기" : "예약하기"}
+                            </button>
+                        </div>
                     </footer>
                 )}
             </section>

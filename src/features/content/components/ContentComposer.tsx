@@ -1,5 +1,7 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { CheckIcon, ChevronDownIcon, ImagePlusIcon, Focus, MapPinIcon, SendIcon, SparklesIcon } from "lucide-react"
+import { useSelectedStoreId } from "../../../store"
+import { usePublishContentMutation } from "../../../hooks/useContentMutations"
 const targets = [
     {
         name: "Instagram",
@@ -18,6 +20,9 @@ const targets = [
     },
 ]
 export function ContentComposer() {
+    const selectedStoreId = useSelectedStoreId()
+    const publishMutation = usePublishContentMutation()
+    const titleRef = useRef<HTMLInputElement>(null)
     const [body, setBody] = useState(
         "비가 오는 오늘, 따뜻한 라떼 한 잔으로 잠깐 쉬어가세요.\n오후 2시부터는 갓 구운 휘낭시에가 함께 나옵니다."
     )
@@ -57,6 +62,7 @@ export function ContentComposer() {
                     게시물 제목
                 </label>
                 <input
+                    ref={titleRef}
                     id="post-title"
                     className="w-full border-0 p-0 text-base font-bold text-[#172033] placeholder:text-slate-400 focus:outline-none"
                     placeholder="게시물 제목을 입력하세요"
@@ -117,11 +123,22 @@ export function ContentComposer() {
                         })}
                     </div>
                 </div>
+                {publishMutation.error && (
+                    <p className="mt-4 text-[11px] font-medium text-[#d6503b]">{publishMutation.error}</p>
+                )}
                 <div className="mt-4 flex items-center gap-2">
                     <button
                         type="button"
-                        onClick={() => setPublished(true)}
-                        disabled={selectedTargets.length === 0}
+                        onClick={async () => {
+                            const ok = await publishMutation.run({
+                                storeId: selectedStoreId,
+                                title: titleRef.current?.value ?? "",
+                                body,
+                                channels: selectedTargets,
+                            })
+                            if (ok) setPublished(true)
+                        }}
+                        disabled={selectedTargets.length === 0 || publishMutation.loading}
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#172b4d] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#223b66] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         {published ? (
@@ -129,7 +146,7 @@ export function ContentComposer() {
                         ) : (
                             <SendIcon size={16} aria-hidden="true" />
                         )}
-                        {published ? "게시 요청을 보냈어요" : "지금 게시하기"}
+                        {published ? "게시 요청을 보냈어요" : publishMutation.loading ? "게시 중…" : "지금 게시하기"}
                     </button>
                     <button
                         type="button"

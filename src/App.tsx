@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
-import { initialStores, type StoreProfile } from "./data/store"
+import { AppProvider, useStores, useSelectedStoreId, useSetSelectedStoreId } from "./store"
+import { useExitApp } from "./hooks/useExitApp"
 import { AuthPage } from "./features/auth/pages/AuthPage"
 import { StoreOnboarding } from "./features/store/pages/StoreOnboarding"
 import { WorkspaceShell } from "./components/layout/WorkspaceShell"
@@ -9,21 +10,17 @@ type AuthMode = "login" | "signup"
 
 function AppRoutes() {
     const navigate = useNavigate()
-    const [stores, setStores] = useState<StoreProfile[]>(initialStores)
-    const [selectedStoreId, setSelectedStoreId] = useState<string>(initialStores[0]?.id || "")
-    const [initialStoreStep, setInitialStoreStep] = useState<1 | 2 | 3>(1)
+    const stores = useStores()
+    const selectedStoreId = useSelectedStoreId()
+    const setSelectedStoreId = useSetSelectedStoreId()
+    const exitApp = useExitApp()
+    const [initialStoreStep, setInitialStoreStep] = useState(1)
 
-    const addStore = (newStore: StoreProfile) => {
-        setStores((current) => [...current, newStore])
-        setSelectedStoreId(newStore.id)
-        navigate("/dashboard")
-    }
+    // auth → app (after login)
+    const enterApp = () => navigate("/dashboard")
 
-    const logout = () => {
-        setStores([])
-        setSelectedStoreId("")
-        navigate("/login")
-    }
+    // auth → app (after signup: go to onboarding)
+    const enterOnboarding = () => navigate("/stores/new")
 
     const hasStores = stores.length > 0
     const homeDestination = hasStores ? "/dashboard" : "/login"
@@ -36,7 +33,7 @@ function AppRoutes() {
             setInitialStoreStep(1)
             navigate("/stores/new")
         },
-        onLogout: logout,
+        onLogout: exitApp,
     }
 
     return (
@@ -47,18 +44,8 @@ function AppRoutes() {
                 element={
                     <AuthPage
                         initialMode="login"
-                        onLogin={() => {
-                            if (stores.length === 0) {
-                                setStores(initialStores)
-                                setSelectedStoreId(initialStores[0].id)
-                            }
-                            navigate("/dashboard")
-                        }}
-                        onSignup={() => {
-                            setStores([])
-                            setSelectedStoreId("")
-                            navigate("/stores/new")
-                        }}
+                        onLogin={enterApp}
+                        onSignup={enterOnboarding}
                         onModeChange={(mode) => navigate(mode === "signup" ? "/signup" : "/login")}
                     />
                 }
@@ -68,12 +55,8 @@ function AppRoutes() {
                 element={
                     <AuthPage
                         initialMode="signup"
-                        onLogin={() => navigate("/dashboard")}
-                        onSignup={() => {
-                            setStores([])
-                            setSelectedStoreId("")
-                            navigate("/stores/new")
-                        }}
+                        onLogin={enterApp}
+                        onSignup={enterOnboarding}
                         onModeChange={(mode: AuthMode) => navigate(mode === "signup" ? "/signup" : "/login")}
                     />
                 }
@@ -83,7 +66,7 @@ function AppRoutes() {
                 element={
                     <StoreOnboarding
                         initialStep={initialStoreStep}
-                        onComplete={addStore}
+                        onComplete={enterApp}
                         onCancel={stores.length > 0 ? () => navigate("/dashboard") : undefined}
                     />
                 }
@@ -101,7 +84,9 @@ function AppRoutes() {
 export default function App() {
     return (
         <BrowserRouter>
-            <AppRoutes />
+            <AppProvider>
+                <AppRoutes />
+            </AppProvider>
         </BrowserRouter>
     )
 }

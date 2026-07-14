@@ -2,6 +2,8 @@ import { useState } from "react"
 import { CheckIcon, LogOutIcon, MailIcon, PlusIcon, ShieldCheckIcon, StoreIcon, UserRoundIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
 import type { StoreProfile } from "../../../data/store"
+import { getAccent, getInitials } from "../../../utils/storeUtils"
+import { useUser } from "../../../store"
 
 type MyPageProps = {
     store: StoreProfile
@@ -10,6 +12,7 @@ type MyPageProps = {
     onLogout: () => void
 }
 export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps) {
+    const user = useUser()
     const [saved, setSaved] = useState(false)
     const save = () => {
         setSaved(true)
@@ -53,7 +56,7 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
                         </div>
                         <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
                             <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[#e7c8a0] text-xl font-extrabold text-[#392d24]">
-                                JI
+                                {getInitials(user?.name ?? "")}
                             </span>
                             <button
                                 type="button"
@@ -63,10 +66,10 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
                             </button>
                         </div>
                         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                            <Field label="이름" defaultValue="김지인" />
-                            <Field label="휴대폰 번호" defaultValue="010-3492-0426" />
+                            <Field label="이름" defaultValue={user?.name ?? ""} />
+                            <Field label="휴대폰 번호" defaultValue="" />
                             <div className="sm:col-span-2">
-                                <Field label="이메일" defaultValue="jiin@momo-coffee.kr" />
+                                <Field label="이메일" defaultValue={user?.email ?? ""} />
                             </div>
                         </div>
                     </section>
@@ -80,7 +83,7 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
                             </div>
                         </div>
                         <div className="mt-5 divide-y divide-[#eeeae2]">
-                            <Row label="로그인 이메일" value="jiin@momo-coffee.kr" action="변경" />
+                            <Row label="로그인 이메일" value={user?.email ?? ""} action="변경" />
                             <Row label="비밀번호" value="마지막 변경 2026. 05. 12" action="변경" />
                             <Row label="2단계 인증" value="사용 안 함" action="설정" />
                         </div>
@@ -92,7 +95,7 @@ export function MyPage({ store, storeCount, onAddStore, onLogout }: MyPageProps)
                         <p className="font-mono-label text-[9px] tracking-[0.14em] text-[#9edcc9]">MY STORES</p>
                         <div className="mt-4 flex items-center gap-3">
                             <span
-                                className={`flex h-11 w-11 items-center justify-center rounded-xl ${store.accent} text-[#172033]`}
+                                className={`flex h-11 w-11 items-center justify-center rounded-xl ${getAccent(store.id)} text-[#172033]`}
                             >
                                 <StoreIcon size={20} />
                             </span>

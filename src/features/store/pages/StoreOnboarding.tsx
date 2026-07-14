@@ -4,22 +4,20 @@ import {
     ArrowRightIcon,
     CheckIcon,
     Clock3Icon,
-    MapPinIcon,
     PhoneIcon,
     SparklesIcon,
     StoreIcon,
 } from "lucide-react"
-import type { StoreProfile } from "../../../data/store"
+import { useCreateStoreMutation } from "../../../hooks/useStoreMutations"
 
 type StoreOnboardingProps = {
     initialStep?: 1 | 2 | 3
-    onComplete: (store: StoreProfile) => void
+    onComplete: () => void
     onCancel?: () => void
 }
 type StoreForm = {
     name: string
     category: string
-    neighborhood: string
     address: string
     phone: string
     hours: string
@@ -31,15 +29,14 @@ const tones = ["따뜻하고 담백한", "경쾌하고 친근한", "전문적이
 const accentOptions = ["bg-[#e9c7a7]", "bg-[#b9d9cf]", "bg-[#efd59d]", "bg-[#d7c5ea]"]
 
 export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: StoreOnboardingProps) {
+    const createStoreMutation = useCreateStoreMutation()
     const [step, setStep] = useState(initialStep)
-    const [isCreating, setIsCreating] = useState(false)
     const [isPendingConfirm, setIsPendingConfirm] = useState(false)
-    const [createdStore, setCreatedStore] = useState<StoreProfile | null>(null)
+    const [submitted, setSubmitted] = useState(false)
     const [errors, setErrors] = useState<FieldErrors>({})
     const [form, setForm] = useState<StoreForm>({
         name: "",
         category: "카페 · 디저트",
-        neighborhood: "",
         address: "",
         phone: "",
         hours: "매일 10:00 - 20:00",
@@ -80,7 +77,6 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
         const nextErrors: FieldErrors = {}
         if (currentStep === 1) {
             if (form.name.trim().length < 2) nextErrors.name = "가게 이름을 2자 이상 입력해 주세요."
-            if (!form.neighborhood.trim()) nextErrors.neighborhood = "가게가 있는 동네를 입력해 주세요."
             if (!form.address.trim()) nextErrors.address = "고객이 찾을 수 있는 주소를 입력해 주세요."
         }
         if (currentStep === 2) {
@@ -98,7 +94,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
         setStep((current) => Math.min(current + 1, 3) as 1 | 2 | 3)
     }
 
-    const createStore = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         if (!validate(1)) {
             setStep(1)
@@ -116,37 +112,15 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
             return
         }
 
-        setIsCreating(true)
-        window.setTimeout(() => {
-            const cleanName = form.name.trim()
-            const initials = cleanName.slice(0, 2).toUpperCase()
-            const id = `${cleanName.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`
-            setCreatedStore({
-                id,
-                name: cleanName,
-                neighborhood: form.neighborhood.trim(),
-                address: form.address.trim(),
-                initials,
-                accent: accentOptions[Math.floor(Math.random() * accentOptions.length)],
-                description: `${form.neighborhood.trim()}의 ${form.category}입니다.`,
-                menu: form.menu
-                    .split(",")
-                    .map((item) => item.trim())
-                    .filter(Boolean),
-                tone: form.tone,
-                reviewCount: 0,
-                category: form.category,
-                phone: form.phone.trim(),
-                hours: form.hours.trim(),
-            })
-            setIsCreating(false)
-        }, 700)
+        const ok = await createStoreMutation.run(form)
+        if (ok) setSubmitted(true)
     }
 
     const inputClass = (key: keyof StoreForm) =>
         `mt-1.5 w-full rounded-xl border bg-white px-3 py-3 text-sm text-[#172033] outline-none placeholder:text-slate-400 focus:border-[#3dd7af] ${errors[key] ? "border-[#d6503b]" : "border-[#ded9cf]"}`
 
-    if (createdStore) {
+    if (submitted) {
+        const menuNames = form.menu.split(",").map((m) => m.trim()).filter(Boolean)
         return (
             <main className="flex min-h-screen w-full items-center justify-center bg-[#f5f2eb] p-5">
                 <section className="w-full max-w-lg rounded-3xl border border-[#ded9cf] bg-white p-8 text-center shadow-[0_20px_55px_rgba(23,43,77,0.08)] sm:p-10">
@@ -158,18 +132,18 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
                         가게 등록을 완료했어요.
                     </h1>
                     <p className="mt-3 text-sm leading-6 text-slate-500">
-                        <strong className="text-[#172033]">{createdStore.name}</strong>의 기본 정보를 저장했어요. 이제
+                        <strong className="text-[#172033]">{form.name.trim()}</strong>의 기본 정보를 저장했어요. 이제
                         이 가게의 메뉴와 말투를 담은 콘텐츠 초안을 바로 만들 수 있습니다.
                     </p>
                     <div className="mt-6 rounded-2xl bg-[#f0faf6] p-4 text-left">
                         <p className="text-xs font-bold text-[#168165]">AI 초안에 반영되는 정보</p>
                         <p className="mt-2 text-xs leading-5 text-[#42526e]">
-                            {createdStore.neighborhood} · {createdStore.menu.join(" · ")} · {createdStore.tone}
+                            {form.address.trim()} · {menuNames.join(" · ")} · {form.tone}
                         </p>
                     </div>
                     <button
                         type="button"
-                        onClick={() => onComplete(createdStore)}
+                        onClick={onComplete}
                         className="mt-7 inline-flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-5 py-3 text-sm font-bold text-white hover:bg-[#223b66]"
                     >
                         내 가게로 시작하기 <ArrowRightIcon size={17} />
@@ -232,7 +206,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
                         </ol>
                     </div>
 
-                    <form onSubmit={createStore} noValidate className="p-5 sm:p-8">
+                    <form onSubmit={handleSubmit} noValidate className="p-5 sm:p-8">
                         {step === 1 && (
                             <div>
                                 <div className="flex items-center gap-2">
@@ -266,21 +240,6 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
                                             <option>소매 · 편집숍</option>
                                             <option>생활 서비스</option>
                                         </select>
-                                    </Field>
-                                    <Field label="동네" error={errors.neighborhood}>
-                                        <span className="relative mt-1.5 block">
-                                            <MapPinIcon
-                                                size={18}
-                                                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                                                aria-hidden="true"
-                                            />
-                                            <input
-                                                value={form.neighborhood}
-                                                onChange={(event) => update("neighborhood", event.target.value)}
-                                                className={`${inputClass("neighborhood")} pl-11`}
-                                                placeholder="예: 서울 용산구 한남동"
-                                            />
-                                        </span>
                                     </Field>
                                     <Field label="상세 주소" error={errors.address} className="sm:col-span-2">
                                         <input
@@ -389,7 +348,7 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
                                         <div className="min-w-0">
                                             <p className="text-base font-extrabold text-[#172033]">{form.name}</p>
                                             <p className="mt-1 text-xs text-[#42526e]">
-                                                {form.category} · {form.neighborhood}
+                                                {form.category} · {form.address}
                                             </p>
                                         </div>
                                     </div>
@@ -430,19 +389,23 @@ export function StoreOnboarding({ initialStep = 1, onComplete, onCancel }: Store
                             ) : (
                                 <button
                                     type="submit"
-                                    disabled={isCreating}
+                                    disabled={createStoreMutation.loading}
                                     className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66] disabled:opacity-60"
                                 >
-                                    {/* 💡 수정: 첫 터치 시 '정말 등록하시겠습니까?' 문구 유도 */}
-                                    {isCreating
+                                    {createStoreMutation.loading
                                         ? "가게 만드는 중…"
                                         : isPendingConfirm
                                           ? "정말 등록하시겠습니까?"
                                           : "가게 등록 완료"}{" "}
-                                    {!isCreating && <CheckIcon size={15} />}
+                                    {!createStoreMutation.loading && <CheckIcon size={15} />}
                                 </button>
                             )}
                         </div>
+                        {createStoreMutation.error && (
+                            <p className="mt-3 text-center text-[11px] font-medium text-[#d6503b]">
+                                {createStoreMutation.error}
+                            </p>
+                        )}
                     </form>
                 </section>
             </div>

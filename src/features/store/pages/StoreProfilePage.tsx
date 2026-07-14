@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import {
     CheckIcon,
     Clock3Icon,
@@ -7,31 +7,25 @@ import {
     CameraIcon,
     BookTextIcon,
     UsersIcon,
+    MapPinIcon,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
 import type { BusinessHour, StoreProfile } from "../../../data/store"
+import type { PlatformId } from "../../../data/platforms"
+import { PLATFORM_META } from "../../../data/platforms"
+import { useIntegrations } from "../../../store"
 import { useAddMenuMutation, useUpdateBasicMutation, useUpdateHoursMutation } from "../../../hooks/useStoreMutations"
+import { startOAuth } from "../../../api"
 
-const platforms = [
-    {
-        id: "instagram",
-        name: "Instagram",
-        icon: CameraIcon,
-        connected: true,
-    },
-    {
-        id: "naverblog",
-        name: "네이버 블로그",
-        icon: BookTextIcon,
-        connected: false,
-    },
-    {
-        id: "facebook",
-        name: "Facebook",
-        icon: UsersIcon,
-        connected: false,
-    },
-]
+const PLATFORM_ICONS: Partial<Record<PlatformId, LucideIcon>> = {
+    MOCK_MAP: MapPinIcon,
+    INSTAGRAM: CameraIcon,
+    NAVER_BLOG: BookTextIcon,
+    FACEBOOK: UsersIcon,
+}
+
+const DISPLAY_PLATFORM_IDS: PlatformId[] = ["MOCK_MAP", "INSTAGRAM", "NAVER_BLOG", "FACEBOOK"]
 
 const dayLabels: Record<string, string> = {
     MON: "월요일",
@@ -44,6 +38,7 @@ const dayLabels: Record<string, string> = {
 }
 
 export function StoreProfilePage({ store }: { store: StoreProfile }) {
+    const integrations = useIntegrations()
     const [saved, setSaved] = useState(false)
     const [businessHours, setBusinessHours] = useState<BusinessHour[]>(store.businessHours)
     const menus = store.menuItems.map((i) => i.name)
@@ -52,7 +47,18 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const updateBasicMutation = useUpdateBasicMutation()
     const updateHoursMutation = useUpdateHoursMutation()
     const addMenuMutation = useAddMenuMutation()
+    const [oauthLoading, setOauthLoading] = useState(false)
     const saving = updateBasicMutation.loading || updateHoursMutation.loading
+
+    const handleConnect = useCallback(async (platformId: PlatformId) => {
+        setOauthLoading(true)
+        try {
+            const url = await startOAuth(platformId, store.id)
+            window.location.href = url
+        } catch {
+            setOauthLoading(false)
+        }
+    }, [store.id])
 
     const handleSave = async () => {
         if (!basicFormRef.current) return
@@ -197,12 +203,14 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                     </div>
 
                     <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                        {platforms.map((platform) => {
-                            const Icon = platform.icon
+                        {DISPLAY_PLATFORM_IDS.map((id) => {
+                            const Icon = PLATFORM_ICONS[id]!
+                            const meta = PLATFORM_META[id]
+                            const connected = integrations.includes(id)
 
                             return (
                                 <div
-                                    key={platform.id}
+                                    key={id}
                                     className="flex items-center justify-between rounded-xl border border-[#ded9cf] p-4"
                                 >
                                     <div className="flex items-center gap-3">
@@ -215,25 +223,33 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
 
                                         <div>
                                             <p className="text-sm font-bold text-[#172033]">
-                                                {platform.name}
+                                                {meta.name}
                                             </p>
 
                                             <p className="text-xs text-slate-500">
-                                                {platform.connected
+                                                {connected
                                                     ? "연동 완료"
                                                     : "아직 연동되지 않았습니다."}
                                             </p>
                                         </div>
                                     </div>
 
-                                    {platform.connected ? (
+                                    {connected ? (
                                         <span className="rounded-full bg-[#eafaf5] px-3 py-1 text-xs font-bold text-[#168165]">
                                             연동됨
                                         </span>
-                                    ) : (
-                                        <button className="rounded-lg bg-[#172b4d] px-3 py-2 text-xs font-bold text-white hover:bg-[#223b66]">
+                                    ) : meta.available ? (
+                                        <button
+                                            onClick={() => handleConnect(id)}
+                                            disabled={oauthLoading}
+                                            className="rounded-lg bg-[#172b4d] px-3 py-2 text-xs font-bold text-white hover:bg-[#223b66] disabled:opacity-60"
+                                        >
                                             연동
                                         </button>
+                                    ) : (
+                                        <span className="text-xs font-semibold text-slate-400">
+                                            준비 중
+                                        </span>
                                     )}
                                 </div>
                             )

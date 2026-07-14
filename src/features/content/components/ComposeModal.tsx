@@ -11,6 +11,21 @@ import {
     WandSparklesIcon,
     XIcon,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+import { useIntegrations } from "../../../store"
+import type { PlatformId } from "../../../data/platforms"
+import { PLATFORM_META } from "../../../data/platforms"
+
+const PLATFORM_DISPLAY: Partial<Record<PlatformId, { icon: LucideIcon; color: string }>> = {
+    INSTAGRAM: { icon: Focus, color: "bg-[#f4c8d3]" },
+    NAVER_MAP: { icon: MapPinIcon, color: "bg-[#bce8ce]" },
+    GOOGLE_MAP: { icon: MapPinIcon, color: "bg-[#cbdcf6]" },
+    MOCK_MAP: { icon: MapPinIcon, color: "bg-[#bce8ce]" },
+    NAVER_BLOG: { icon: MapPinIcon, color: "bg-[#bce8ce]" },
+    FACEBOOK: { icon: MapPinIcon, color: "bg-[#cbdcf6]" },
+    KAKAO_MAP: { icon: MapPinIcon, color: "bg-[#f9e090]" },
+}
+
 type StoreContext = {
     id: string
     name: string
@@ -18,23 +33,6 @@ type StoreContext = {
     menu: string
     toneOfVoice: string
 }
-const channels = [
-    {
-        name: "Instagram",
-        icon: Focus,
-        color: "bg-[#f4c8d3]",
-    },
-    {
-        name: "네이버 플레이스",
-        icon: MapPinIcon,
-        color: "bg-[#bce8ce]",
-    },
-    {
-        name: "Google Business",
-        icon: MapPinIcon,
-        color: "bg-[#cbdcf6]",
-    },
-]
 type ComposeModalProps = {
     open: boolean
     onClose: () => void
@@ -42,15 +40,20 @@ type ComposeModalProps = {
 }
 export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
     const dialogTitleId = useId()
+    const integrations = useIntegrations()
     const [intent, setIntent] = useState("")
     const [title, setTitle] = useState("")
     const [body, setBody] = useState("")
-    const [selectedChannels, setSelectedChannels] = useState<string[]>(["Instagram", "네이버 플레이스"])
+    const [selectedChannels, setSelectedChannels] = useState<PlatformId[]>([])
     const [schedule, setSchedule] = useState("지금 게시")
     const [imageAdded, setImageAdded] = useState(false)
     const [published, setPublished] = useState(false)
     const generateDraftMutation = useGenerateContentDraftMutation()
     const publishMutation = usePublishContentMutation()
+    const channels = integrations.flatMap((id) => {
+        const display = PLATFORM_DISPLAY[id]
+        return display ? [{ id, ...display }] : []
+    })
 
     useEffect(() => {
         if (!open) return
@@ -82,9 +85,9 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
             setBody(result.body)
         }
     }
-    const toggleChannel = (channel: string) => {
+    const toggleChannel = (id: PlatformId) => {
         setSelectedChannels((current) =>
-            current.includes(channel) ? current.filter((item) => item !== channel) : [...current, channel]
+            current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
         )
     }
     const publish = async () => {
@@ -133,7 +136,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                         </span>
                         <h3 className="mt-5 text-lg font-extrabold text-[#172033]">게시 요청을 보냈어요</h3>
                         <p className="mt-2 text-sm text-slate-500">
-                            {selectedChannels.join(" · ")}에 맞춰 콘텐츠를 준비하고 있습니다.
+                            {selectedChannels.map((id) => PLATFORM_META[id].name).join(" · ")}에 맞춰 콘텐츠를 준비하고 있습니다.
                         </p>
                     </div>
                 ) : (
@@ -224,12 +227,12 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                             <div className="mt-2 flex flex-wrap gap-2">
                                 {channels.map((channel) => {
                                     const Icon = channel.icon
-                                    const selected = selectedChannels.includes(channel.name)
+                                    const selected = selectedChannels.includes(channel.id)
                                     return (
                                         <button
-                                            key={channel.name}
+                                            key={channel.id}
                                             type="button"
-                                            onClick={() => toggleChannel(channel.name)}
+                                            onClick={() => toggleChannel(channel.id)}
                                             aria-pressed={selected}
                                             className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-bold ${selected ? "border-[#20365b] bg-white text-[#172033]" : "border-transparent bg-[#ebe7df] text-slate-500"}`}
                                         >
@@ -238,7 +241,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                             >
                                                 <Icon size={10} />
                                             </span>
-                                            {channel.name}
+                                            {PLATFORM_META[channel.id].name}
                                             {selected && <CheckIcon size={12} className="text-[#168165]" />}
                                         </button>
                                     )

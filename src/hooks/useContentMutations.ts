@@ -21,6 +21,7 @@ const statusMap: Record<string, string> = {
 
 function toPost(item: ContentItem): Post {
     return {
+        id: item.id,
         title: item.title,
         channels: item.channels.join(" · "),
         date: getRelativeTime(item.updatedAt),
@@ -28,7 +29,10 @@ function toPost(item: ContentItem): Post {
     }
 }
 
-export const useFetchContentsMutation = createMutationHook<string, ContentItem[]>()
+export const useFetchContentsMutation = createMutationHook<
+    string,
+    ContentItem[]
+>()
     .state(() => {
         const setPosts = useSetPosts()
         return { setPosts }
@@ -44,24 +48,36 @@ export function useGenerateContentDraftMutation() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const run = useCallback(async (req: GenerateContentRequest): Promise<ContentSuggestion | null> => {
-        setLoading(true)
-        setError(null)
-        try {
-            const response = await generateContentDraft(req)
-            setLoading(false)
-            return response
-        } catch (err) {
-            setLoading(false)
-            setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.")
-            return null
-        }
-    }, [])
+    const run = useCallback(
+        async (
+            req: GenerateContentRequest,
+        ): Promise<ContentSuggestion | null> => {
+            setLoading(true)
+            setError(null)
+            try {
+                const response = await generateContentDraft(req)
+                setLoading(false)
+                return response
+            } catch (err) {
+                setLoading(false)
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : "알 수 없는 오류가 발생했습니다.",
+                )
+                return null
+            }
+        },
+        [],
+    )
 
     return { loading, error, run }
 }
 
-export const usePublishContentMutation = createMutationHook<PublishContentRequest, ContentItem>()
+export const usePublishContentMutation = createMutationHook<
+    PublishContentRequest,
+    ContentItem
+>()
     .state(() => {
         const setPosts = useSetPosts()
         return { setPosts }

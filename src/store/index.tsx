@@ -3,6 +3,7 @@ import { StoreProvider } from "./StoreContext"
 import { ReviewProvider } from "./ReviewContext"
 import { PostsProvider } from "./ContentContext"
 import { UserProvider } from "./UserContext"
+import { IntegrationsProvider } from "./IntegrationsContext"
 
 export {
     useStores,
@@ -15,13 +16,16 @@ export {
 export { useReviews, useSetReviews, useReviewsState, type Review } from "./ReviewContext"
 export { usePosts, useSetPosts, usePostsState, type Post } from "./ContentContext"
 export { useUser, useSetUser, type UserProfile } from "./UserContext"
+export { useIntegrations, useSetIntegrations, useIntegrationsState } from "./IntegrationsContext"
 
 export function AppProvider({ children }: { children: ReactNode }) {
     return (
         <UserProvider>
             <StoreProvider>
                 <ReviewProvider>
-                    <PostsProvider>{children}</PostsProvider>
+                    <PostsProvider>
+                        <IntegrationsProvider>{children}</IntegrationsProvider>
+                    </PostsProvider>
                 </ReviewProvider>
             </StoreProvider>
         </UserProvider>

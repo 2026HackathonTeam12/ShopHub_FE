@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FileTextIcon, PlusIcon, SparklesIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
-import { usePosts } from "../../../store"
+import { usePosts, useSelectedStoreId } from "../../../store"
+import { useFetchDashboardMutation } from "../../../hooks/useDashboardMutations"
 
 const statusStyle: Record<string, string> = {
     예약됨: "bg-[#edf8f4] text-[#168165]",
@@ -12,8 +13,14 @@ const statusStyle: Record<string, string> = {
 
 export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
     const posts = usePosts()
+    const selectedStoreId = useSelectedStoreId()
+    const dashboardMutation = useFetchDashboardMutation()
     const [tab, setTab] = useState("전체")
     const filtered = posts.filter((post) => tab === "전체" || post.status === tab)
+
+    useEffect(() => {
+        if (selectedStoreId) dashboardMutation.run(selectedStoreId)
+    }, [selectedStoreId]) // eslint-disable-line react-hooks/exhaustive-deps
     return (
         <>
             <PageHeader
@@ -50,7 +57,7 @@ export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
                     </div>
                     <div className="divide-y divide-[#eeeae2]">
                         {filtered.map((post) => (
-                            <article key={post.title} className="flex flex-wrap items-center gap-4 px-5 py-4">
+                            <article key={post.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#e9e2d5] text-[#6b5037]">
                                     <FileTextIcon size={20} />
                                 </div>
@@ -86,7 +93,7 @@ export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
                             </div>
                         </div>
                         <p className="mt-5 text-sm font-bold leading-6">
-                            연남동 비 오는 오후, 창가 자리와 라떼를 담아보세요.
+                            {dashboardMutation.card?.message ?? ""}
                         </p>
                         <p className="mt-2 text-xs leading-5 text-[#c5d3eb]">
                             가게 정보와 오늘의 맥락을 이용해 초안을 만들 수 있어요.

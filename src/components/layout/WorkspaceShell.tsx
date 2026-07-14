@@ -17,6 +17,7 @@ import { useFetchStoresMutation } from "../../hooks/useStoreMutations"
 import { useFetchReviewsMutation } from "../../hooks/useReviewMutations"
 import { useFetchContentsMutation } from "../../hooks/useContentMutations"
 import { useFetchUserMutation } from "../../hooks/useAuthMutations"
+import { useFetchIntegrationsMutation } from "../../hooks/useIntegrationMutations"
 import {
     useStores,
     useSelectedStoreId,
@@ -82,6 +83,7 @@ function WorkspaceLayout({ onAddStore, onLogout }: WorkspaceLayoutProps) {
     const user = useUser()
     const fetchReviews = useFetchReviewsMutation()
     const fetchContents = useFetchContentsMutation()
+    const fetchIntegrations = useFetchIntegrationsMutation()
     const [mobileOpen, setMobileOpen] = useState(false)
     const [composerOpen, setComposerOpen] = useState(false)
     const [storeMenuOpen, setStoreMenuOpen] = useState(false)
@@ -97,6 +99,7 @@ function WorkspaceLayout({ onAddStore, onLogout }: WorkspaceLayoutProps) {
 
         fetchReviews.run(selectedStoreId)
         fetchContents.run(selectedStoreId)
+        fetchIntegrations.run(selectedStoreId)
     }, [selectedStoreId]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const activePath = viewLabels[location.pathname]

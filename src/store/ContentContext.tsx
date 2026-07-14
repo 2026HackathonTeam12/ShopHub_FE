@@ -1,6 +1,7 @@
 import { createStateContext } from "./createStateContext"
 
 export interface Post {
+    id: string
     title: string
     channels: string
     date: string

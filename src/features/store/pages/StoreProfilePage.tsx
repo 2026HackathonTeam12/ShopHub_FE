@@ -9,12 +9,8 @@ import {
     UsersIcon,
 } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
-import type { StoreProfile } from "../../../data/store"
-import {
-    useAddMenuMutation,
-    useUpdateBasicMutation,
-    useUpdateHoursMutation,
-} from "../../../hooks/useStoreMutations"
+import type { BusinessHour, StoreProfile } from "../../../data/store"
+import { useAddMenuMutation, useUpdateBasicMutation, useUpdateHoursMutation } from "../../../hooks/useStoreMutations"
 
 const platforms = [
     {
@@ -37,29 +33,19 @@ const platforms = [
     },
 ]
 
-const defaultHours = [
-    ["월요일", "10:00", "21:00"],
-    ["화요일", "10:00", "21:00"],
-    ["수요일", "10:00", "21:00"],
-    ["목요일", "10:00", "21:00"],
-    ["금요일", "10:00", "22:00"],
-    ["토요일", "11:00", "22:00"],
-    ["일요일", "11:00", "20:00"],
-]
-
-const dayMap: Record<string, string> = {
-    월요일: "MON",
-    화요일: "TUE",
-    수요일: "WED",
-    목요일: "THU",
-    금요일: "FRI",
-    토요일: "SAT",
-    일요일: "SUN",
+const dayLabels: Record<string, string> = {
+    MON: "월요일",
+    TUE: "화요일",
+    WED: "수요일",
+    THU: "목요일",
+    FRI: "금요일",
+    SAT: "토요일",
+    SUN: "일요일",
 }
 
 export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const [saved, setSaved] = useState(false)
-    const [hours, setHours] = useState(defaultHours)
+    const [businessHours, setBusinessHours] = useState<BusinessHour[]>(store.businessHours)
     const menus = store.menuItems.map((i) => i.name)
     const [newMenu, setNewMenu] = useState("")
     const basicFormRef = useRef<HTMLFormElement>(null)
@@ -86,12 +72,7 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
             }),
             updateHoursMutation.run({
                 storeId: store.id,
-                businessHours: hours.map(([day, openTime, closeTime]) => ({
-                    dayOfWeek: dayMap[day] ?? day,
-                    openTime,
-                    closeTime,
-                    open: true,
-                })),
+                businessHours,
             }),
         ])
         if (basicOk && hoursOk) {
@@ -271,65 +252,43 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                             </p>
                         </div>
                     </div>
-                    <p className="mt-4 rounded-xl bg-[#f7f5f0] px-3 py-2 text-xs font-semibold text-[#42526e]">
-                        등록한 기본 시간:{" "}
-                        {store.businessHours
-                            .map(
-                                (h) =>
-                                    `${h.dayOfWeek} ${h.openTime}-${h.closeTime}`,
-                            )
-                            .join(", ")}
-                    </p>
                     <div className="mt-3 divide-y divide-[#eeeae2]">
-                        {hours.map((row, index) => (
-                            <div
-                                key={row[0]}
-                                className="flex items-center gap-3 py-3"
-                            >
+                        {businessHours.map((hour) => (
+                            <div key={hour.dayOfWeek} className="flex items-center gap-3 py-3">
                                 <span className="w-14 text-xs font-bold text-[#172033]">
-                                    {row[0]}
+                                    {dayLabels[hour.dayOfWeek] ?? hour.dayOfWeek}
                                 </span>
                                 <input
-                                    value={row[1]}
+                                    value={hour.openTime}
                                     onChange={(event) =>
-                                        setHours((current) =>
-                                            current.map((r, i) =>
-                                                i === index
-                                                    ? r.map((cell, ci) =>
-                                                          ci === 1
-                                                              ? event.target
-                                                                    .value
-                                                              : cell,
-                                                      )
-                                                    : r,
-                                            ),
+                                        setBusinessHours((current) =>
+                                            current.map((item) =>
+                                                item.dayOfWeek === hour.dayOfWeek
+                                                    ? { ...item, openTime: event.target.value }
+                                                    : item
+                                            )
                                         )
                                     }
                                     className="w-20 rounded-lg border border-[#ded9cf] px-2 py-1.5 text-xs outline-none focus:border-[#3dd7af]"
-                                    aria-label={`${row[0]} 시작 시간`}
+                                    aria-label={`${dayLabels[hour.dayOfWeek] ?? hour.dayOfWeek} 시작 시간`}
                                 />
                                 <span className="text-slate-400">–</span>
                                 <input
-                                    value={row[2]}
+                                    value={hour.closeTime}
                                     onChange={(event) =>
-                                        setHours((current) =>
-                                            current.map((r, i) =>
-                                                i === index
-                                                    ? r.map((cell, ci) =>
-                                                          ci === 2
-                                                              ? event.target
-                                                                    .value
-                                                              : cell,
-                                                      )
-                                                    : r,
-                                            ),
+                                        setBusinessHours((current) =>
+                                            current.map((item) =>
+                                                item.dayOfWeek === hour.dayOfWeek
+                                                    ? { ...item, closeTime: event.target.value }
+                                                    : item
+                                            )
                                         )
                                     }
                                     className="w-20 rounded-lg border border-[#ded9cf] px-2 py-1.5 text-xs outline-none focus:border-[#3dd7af]"
-                                    aria-label={`${row[0]} 종료 시간`}
+                                    aria-label={`${dayLabels[hour.dayOfWeek] ?? hour.dayOfWeek} 종료 시간`}
                                 />
                                 <span className="ml-auto text-[11px] font-semibold text-[#168165]">
-                                    영업
+                                    {hour.open ? "영업" : "휴무"}
                                 </span>
                             </div>
                         ))}

@@ -1,5 +1,10 @@
 # Agentic development guidelines
 
+## Init
+
+Read @docs/mental-model.md for establishing the mental model for applicaton core
+architecture.
+
 ## General guidelines
 
 ### 1. Think Before Coding

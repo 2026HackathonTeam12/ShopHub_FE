@@ -62,8 +62,13 @@ export function useGenerateContentDraftMutation() {
 }
 
 export const usePublishContentMutation = createMutationHook<PublishContentRequest, ContentItem>()
-    .state(() => ({}))
+    .state(() => {
+        const setPosts = useSetPosts()
+        return { setPosts }
+    })
     .request((req) => req)
     .api(publishContent)
-    .update(() => {})
+    .update((item, { setPosts }) => {
+        setPosts((current) => [toPost(item), ...current])
+    })
     .build()

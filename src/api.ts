@@ -86,6 +86,10 @@ export async function signUp(req: SignUpRequest): Promise<AuthResponse> {
     return auth
 }
 
+export async function fetchCurrentUser(): Promise<UserProfile> {
+    return request<UserProfile>("/v1/auth/me")
+}
+
 // ── Stores ────────────────────────────────────────────────────────────────────
 
 export interface CreateStoreRequest {

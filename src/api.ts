@@ -3,14 +3,18 @@ import type { Review } from "./store/ReviewContext"
 
 const BASE_URL = "http://localhost:8080"
 
-let accessToken: string | null = null
+const TOKEN_KEY = "shophub_access_token"
+
+let accessToken: string | null = localStorage.getItem(TOKEN_KEY)
 
 export function setAccessToken(token: string) {
     accessToken = token
+    localStorage.setItem(TOKEN_KEY, token)
 }
 
 export function clearAccessToken() {
     accessToken = null
+    localStorage.removeItem(TOKEN_KEY)
 }
 
 export class UnauthorizedError extends Error {

@@ -2,7 +2,7 @@
 
 ### Goal
 
-Introduce a new backend-backed feature following the application's standard mutation architecture.
+Implement a new backend-backed feature following the application's standard integration architecture.
 
 ---
 
@@ -10,30 +10,34 @@ Introduce a new backend-backed feature following the application's standard muta
 
 #### Step 1. API Layer
 
-Implement the required API functions in `src/api.ts`. Refer to
-`docs/openapi.yaml` for reference.
+Implement the required API functions in `src/api.ts`.
+
+Use `docs/openapi.yaml` as the canonical API specification.
 
 #### Step 2. Mutation Hook
 
-Create the corresponding mutation hook in `hooks/` using the hook factory.
+Implement the corresponding mutation hook in `src/hooks` using the hook factory.
 
-The hook should:
+The hook must:
 
-- construct requests,
-- call the backend,
-- update the store,
-- expose async state.
+- construct the request,
+- invoke the backend API,
+- update the application store,
+- expose asynchronous request state.
 
-#### Step 3. Hook Consumption
+#### Step 3. Integration
 
-Replace existing implementation with the generated mutation hook.
-Remove obsolete local states.
+Replace the existing implementation with the generated mutation hook.
+
+Remove obsolete local state and mock update logic.
+
+Reuse the existing store update logic whenever possible.
 
 #### Step 4. Verification
 
-Verify:
+Verify that:
 
-- API integration is complete.
-- Local application state has been removed.
-- Existing UI semantics are preserved.
-- `npm run lint` succeeds.
+- every intended interaction is backed by the implemented API,
+- obsolete local application state has been removed,
+- existing UI semantics are preserved,
+- `npm run lint` completes without errors.

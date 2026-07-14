@@ -7,6 +7,7 @@ export interface Post {
     channels: string
     date: string
     status: string
+    platforms: { platform: string; status: "PENDING" | "SUCCESS" | "FAILED" }[]
 }
 
 export const {

@@ -3,10 +3,12 @@ import {
     generateContentDraft,
     publishContent,
     fetchContents,
+    uploadContentImages,
     type GenerateContentRequest,
     type ContentSuggestion,
     type PublishContentRequest,
     type ContentItem,
+    type ImageUploadResponse,
 } from "../api"
 import { createMutationHook } from "./createMutationHook"
 import { useSetPosts, type Post } from "../store"
@@ -27,6 +29,7 @@ function toPost(item: ContentItem): Post {
         channels: item.channels.join(" · "),
         date: getRelativeTime(item.updatedAt),
         status: statusMap[item.status] ?? item.status,
+        platforms: item.platforms,
     }
 }
 
@@ -57,6 +60,34 @@ export function useGenerateContentDraftMutation() {
             setError(null)
             try {
                 const response = await generateContentDraft(req)
+                setLoading(false)
+                return response
+            } catch (err) {
+                setLoading(false)
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : "알 수 없는 오류가 발생했습니다.",
+                )
+                return null
+            }
+        },
+        [],
+    )
+
+    return { loading, error, run }
+}
+
+export function useUploadImagesMutation() {
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const run = useCallback(
+        async (storeId: string, files: File[]): Promise<ImageUploadResponse | null> => {
+            setLoading(true)
+            setError(null)
+            try {
+                const response = await uploadContentImages(storeId, files)
                 setLoading(false)
                 return response
             } catch (err) {

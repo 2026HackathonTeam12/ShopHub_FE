@@ -22,6 +22,7 @@ import {
     useStores,
     useSelectedStoreId,
     useSetSelectedStoreId,
+    useSetReviews,
     useUser,
 } from "../../store"
 import { MyPage } from "../../features/account/pages/Mypage"
@@ -84,6 +85,7 @@ function WorkspaceLayout({ onAddStore, onLogout }: WorkspaceLayoutProps) {
     const fetchReviews = useFetchReviewsMutation()
     const fetchContents = useFetchContentsMutation()
     const fetchIntegrations = useFetchIntegrationsMutation()
+    const setReviews = useSetReviews()
     const [mobileOpen, setMobileOpen] = useState(false)
     const [composerOpen, setComposerOpen] = useState(false)
     const [storeMenuOpen, setStoreMenuOpen] = useState(false)
@@ -97,6 +99,8 @@ function WorkspaceLayout({ onAddStore, onLogout }: WorkspaceLayoutProps) {
     useEffect(() => {
         if (!selectedStoreId) return
 
+        // Clear previous store's reviews immediately to avoid cross-store bleed.
+        setReviews([])
         fetchReviews.run(selectedStoreId)
         fetchContents.run(selectedStoreId)
         fetchIntegrations.run(selectedStoreId)

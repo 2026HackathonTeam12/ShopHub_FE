@@ -1,8 +1,9 @@
 import type { StoreProfile, BusinessHour } from "./data/store"
 import type { Review } from "./store/ReviewContext"
 import type { PlatformId } from "./data/platforms"
+import { API_BASE_URL } from "./config/env"
 
-const BASE_URL = "http://localhost:8080"
+const BASE_URL = API_BASE_URL
 
 const TOKEN_KEY = "shophub_access_token"
 
@@ -224,7 +225,7 @@ export async function generateContentDraft(req: GenerateContentRequest): Promise
 }
 
 export interface ImageUploadResponse {
-    imageUrls: string[]
+    img_urls: string[]
 }
 
 export async function uploadContentImages(storeId: string, files: File[]): Promise<ImageUploadResponse> {
@@ -269,10 +270,13 @@ export interface ContentItem {
 }
 
 export async function publishContent(req: PublishContentRequest): Promise<ContentItem> {
-    const { storeId, ...body } = req
+    const { storeId, imageUrls, ...body } = req
     return request<ContentItem>(`/v1/stores/${storeId}/contents`, {
         method: "POST",
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+            ...body,
+            ...(imageUrls && imageUrls.length > 0 ? { img_urls: imageUrls } : {}),
+        }),
     })
 }
 
@@ -308,14 +312,37 @@ export async function fetchOAuthStatus(storeId: string): Promise<OAuthConnection
     return request(`/api/integrations/oauth/status?storeId=${storeId}`)
 }
 
-export async function startOAuth(platformId: PlatformId, storeId: string): Promise<string> {
-    const headers: Record<string, string> = {}
-    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`
-    const response = await fetch(`${BASE_URL}/api/integrations/${platformId}/oauth/start?storeId=${storeId}`, {
-        headers,
-        redirect: "manual",
+export interface SaveOAuthCredentialsRequest {
+    clientId: string
+    clientSecret: string
+}
+
+export async function saveOAuthCredentials(
+    platformId: PlatformId,
+    storeId: string,
+    clientId: string,
+    clientSecret: string,
+): Promise<OAuthConnectionStatus> {
+    return request(`/api/integrations/${platformId}/oauth/credentials?storeId=${storeId}`, {
+        method: "PUT",
+        body: JSON.stringify({ clientId, clientSecret }),
     })
-    const location = response.headers.get("Location")
-    if (!location) throw new Error("OAuth 시작 URL을 받지 못했습니다.")
-    return location
+}
+
+export async function disconnectOAuth(platformId: PlatformId, storeId: string): Promise<OAuthConnectionStatus> {
+    return request(`/api/integrations/${platformId}/oauth/disconnect?storeId=${storeId}`, {
+        method: "POST",
+    })
+}
+
+export async function syncMockMapReviews(storeId: string): Promise<Review[]> {
+    return request<Review[]>(`/v1/stores/${storeId}/reviews/sync-mockmap`, { method: "POST" })
+}
+
+export async function startOAuth(platformId: PlatformId, storeId: string): Promise<string> {
+    const { authorizationUrl } = await request<{ authorizationUrl: string }>(
+        `/api/integrations/${platformId}/oauth/authorize-url?storeId=${storeId}`,
+    )
+    if (!authorizationUrl) throw new Error("OAuth 시작 URL을 받지 못했습니다.")
+    return authorizationUrl
 }

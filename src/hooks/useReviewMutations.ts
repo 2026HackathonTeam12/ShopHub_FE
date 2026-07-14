@@ -1,8 +1,20 @@
 import { useState, useCallback } from "react"
 import { createMutationHook } from "./createMutationHook"
-import { fetchReviews, generateReviewDraft, replyToReview, type ReplyRequest } from "../api"
+import { fetchReviews, generateReviewDraft, replyToReview, syncMockMapReviews, type ReplyRequest } from "../api"
 import { useSetReviews } from "../store"
 import type { Review } from "../store/ReviewContext"
+
+export const useSyncMockMapReviewsMutation = createMutationHook<string, Review[]>()
+    .state(() => {
+        const setReviews = useSetReviews()
+        return { setReviews }
+    })
+    .request((storeId) => storeId)
+    .api(syncMockMapReviews)
+    .update((reviews, { setReviews }) => {
+        setReviews(reviews)
+    })
+    .build()
 
 export const useFetchReviewsMutation = createMutationHook<string, Review[]>()
     .state(() => {

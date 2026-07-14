@@ -5,7 +5,7 @@ import {
     PlusIcon,
     Store,
     CameraIcon,
-    BookTextIcon,
+    AtSignIcon,
     UsersIcon,
     MapPinIcon,
     Trash2Icon,
@@ -14,19 +14,20 @@ import type { LucideIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
 import type { BusinessHour, StoreProfile } from "../../../data/store"
 import type { PlatformId } from "../../../data/platforms"
-import { PLATFORM_META } from "../../../data/platforms"
-import { useIntegrations } from "../../../store"
+import { PLATFORM_META, isOAuthPlatform } from "../../../data/platforms"
+import { useIntegrations, useConnectablePlatforms } from "../../../store"
 import { useAddMenuMutation, useDeleteMenuMutation, useUpdateBasicMutation, useUpdateHoursMutation } from "../../../hooks/useStoreMutations"
+import { useDisconnectOAuthMutation, useFetchIntegrationsMutation } from "../../../hooks/useIntegrationMutations"
 import { startOAuth } from "../../../api"
 
 const PLATFORM_ICONS: Partial<Record<PlatformId, LucideIcon>> = {
     MOCK_MAP: MapPinIcon,
     INSTAGRAM: CameraIcon,
-    NAVER_BLOG: BookTextIcon,
+    X: AtSignIcon,
     FACEBOOK: UsersIcon,
 }
 
-const DISPLAY_PLATFORM_IDS: PlatformId[] = ["MOCK_MAP", "INSTAGRAM", "NAVER_BLOG", "FACEBOOK"]
+const DISPLAY_PLATFORM_IDS: PlatformId[] = ["MOCK_MAP", "INSTAGRAM", "X", "FACEBOOK"]
 
 const dayLabels: Record<string, string> = {
     MON: "월요일",
@@ -40,6 +41,7 @@ const dayLabels: Record<string, string> = {
 
 export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const integrations = useIntegrations()
+    const connectablePlatforms = useConnectablePlatforms()
     const [saved, setSaved] = useState(false)
     const [businessHours, setBusinessHours] = useState<BusinessHour[]>(store.businessHours)
     const menuItems = store.menuItems
@@ -49,18 +51,30 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const updateHoursMutation = useUpdateHoursMutation()
     const addMenuMutation = useAddMenuMutation()
     const deleteMenuMutation = useDeleteMenuMutation()
+    const fetchIntegrations = useFetchIntegrationsMutation()
+    const disconnectOAuth = useDisconnectOAuthMutation()
     const [oauthLoading, setOauthLoading] = useState(false)
+    const [oauthError, setOauthError] = useState<string | null>(null)
     const saving = updateBasicMutation.loading || updateHoursMutation.loading
 
     const handleConnect = useCallback(async (platformId: PlatformId) => {
         setOauthLoading(true)
+        setOauthError(null)
         try {
             const url = await startOAuth(platformId, store.id)
             window.location.href = url
-        } catch {
+        } catch (err) {
             setOauthLoading(false)
+            setOauthError(err instanceof Error ? err.message : "연동을 시작할 수 없습니다.")
         }
     }, [store.id])
+
+    const handleDisconnect = async (platformId: PlatformId) => {
+        const ok = await disconnectOAuth.run({ platformId, storeId: store.id })
+        if (ok) {
+            await fetchIntegrations.run(store.id)
+        }
+    }
 
     const handleSave = async () => {
         if (!basicFormRef.current) return
@@ -209,6 +223,8 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                             const Icon = PLATFORM_ICONS[id]!
                             const meta = PLATFORM_META[id]
                             const connected = integrations.includes(id)
+                            const connectable = connectablePlatforms.includes(id)
+                            const oauthPlatform = isOAuthPlatform(id)
 
                             return (
                                 <div
@@ -229,18 +245,28 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                                             </p>
 
                                             <p className="text-xs text-slate-500">
-                                                {connected
-                                                    ? "연동 완료"
-                                                    : "아직 연동되지 않았습니다."}
+                                                {connected ? "연동 완료" : "아직 연동되지 않았습니다."}
                                             </p>
                                         </div>
                                     </div>
 
                                     {connected ? (
-                                        <span className="rounded-full bg-[#eafaf5] px-3 py-1 text-xs font-bold text-[#168165]">
-                                            연동됨
-                                        </span>
-                                    ) : meta.available ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="rounded-full bg-[#eafaf5] px-3 py-1 text-xs font-bold text-[#168165]">
+                                                연동됨
+                                            </span>
+                                            {oauthPlatform && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDisconnect(id)}
+                                                    disabled={disconnectOAuth.loading}
+                                                    className="text-xs font-semibold text-slate-400 hover:text-[#d6503b]"
+                                                >
+                                                    해제
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : oauthPlatform && meta.available && connectable ? (
                                         <button
                                             onClick={() => handleConnect(id)}
                                             disabled={oauthLoading}
@@ -257,6 +283,9 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                             )
                         })}
                     </div>
+                    {oauthError && (
+                        <p className="mt-3 text-xs font-medium text-[#d6503b]">{oauthError}</p>
+                    )}
                 </section>
 
                 <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm">

@@ -23,7 +23,7 @@ const STATUS_ICON: Record<PlatformStatus, React.ReactNode> = {
 const STATUS_LABEL: Record<PlatformStatus, string> = {
     SUCCESS: "게시됨",
     FAILED: "실패",
-    PENDING: "게시 중",
+    PENDING: "대기",
 }
 
 function platformName(platform: string): string {

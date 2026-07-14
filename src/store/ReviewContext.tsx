@@ -4,6 +4,7 @@ export interface Review {
     id: string
     storeId: string
     platform: string
+    sourceReviewId: string | null
     authorName: string
     rating: number
     content: string

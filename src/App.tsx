@@ -4,6 +4,7 @@ import { AppProvider, useStores, useSelectedStoreId, useSetSelectedStoreId } fro
 import { useExitApp } from "./hooks/useExitApp"
 import { AuthPage } from "./features/auth/pages/AuthPage"
 import { StoreOnboarding } from "./features/store/pages/StoreOnboarding"
+import { OAuthCallbackPage } from "./features/integrations/pages/OAuthCallbackPage"
 import { WorkspaceShell } from "./components/layout/WorkspaceShell"
 
 type AuthMode = "login" | "signup"
@@ -71,6 +72,7 @@ function AppRoutes() {
                     />
                 }
             />
+            <Route path="/integrations/oauth/callback" element={<OAuthCallbackPage />} />
             <Route path="/dashboard" element={<WorkspaceShell {...workspaceProps} />} />
             <Route path="/content" element={<WorkspaceShell {...workspaceProps} />} />
             <Route path="/reviews" element={<WorkspaceShell {...workspaceProps} />} />

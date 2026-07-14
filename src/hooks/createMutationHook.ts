@@ -131,15 +131,22 @@ class MutationBuilder<TState, TInput, TRequest, TResponse> {
                 apiFn,
                 updateFn,
             })
+            const requestIdRef = useRef(0)
 
             const run = useCallback(
                 async (input: TInput): Promise<boolean> => {
+                    const requestId = ++requestIdRef.current
                     setState({ loading: true, error: null })
 
                     try {
                         const request = configRef.current.requestFn(input)
                         const response =
                             await configRef.current.apiFn(request)
+
+                        // Ignore late responses from an older store / request.
+                        if (requestId !== requestIdRef.current) {
+                            return false
+                        }
 
                         configRef.current.updateFn(response, context)
 
@@ -150,6 +157,10 @@ class MutationBuilder<TState, TInput, TRequest, TResponse> {
 
                         return true
                     } catch (err) {
+                        if (requestId !== requestIdRef.current) {
+                            return false
+                        }
+
                         if (err instanceof UnauthorizedError) {
                             exitApp()
                             return false

@@ -13,14 +13,14 @@ import {
 import type { LucideIcon } from "lucide-react"
 import { useIntegrations } from "../../../store"
 import type { PlatformId } from "../../../data/platforms"
-import { PLATFORM_META } from "../../../data/platforms"
+import { PLATFORM_META, isContentChannel } from "../../../data/platforms"
 
 const PLATFORM_DISPLAY: Partial<Record<PlatformId, { icon: LucideIcon; color: string }>> = {
     INSTAGRAM: { icon: Focus, color: "bg-[#f4c8d3]" },
     NAVER_MAP: { icon: MapPinIcon, color: "bg-[#bce8ce]" },
     GOOGLE_MAP: { icon: MapPinIcon, color: "bg-[#cbdcf6]" },
     MOCK_MAP: { icon: MapPinIcon, color: "bg-[#bce8ce]" },
-    NAVER_BLOG: { icon: MapPinIcon, color: "bg-[#bce8ce]" },
+    X: { icon: MapPinIcon, color: "bg-[#dbeafe]" },
     FACEBOOK: { icon: MapPinIcon, color: "bg-[#cbdcf6]" },
     KAKAO_MAP: { icon: MapPinIcon, color: "bg-[#f9e090]" },
 }
@@ -51,6 +51,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
     const uploadImagesMutation = useUploadImagesMutation()
     const publishMutation = usePublishContentMutation()
     const channels = integrations.flatMap((id) => {
+        if (!isContentChannel(id)) return []
         const display = PLATFORM_DISPLAY[id]
         return display ? [{ id, ...display }] : []
     })
@@ -208,7 +209,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                     const files = Array.from(event.target.files ?? [])
                                     if (files.length === 0) return
                                     const result = await uploadImagesMutation.run(store.id, files)
-                                    if (result) setImageUrls(result.imageUrls)
+                                    if (result) setImageUrls(result.img_urls)
                                 }}
                             />
                             <button

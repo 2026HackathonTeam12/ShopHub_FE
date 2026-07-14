@@ -12,9 +12,9 @@ import { useCreateStoreMutation } from "../../../hooks/useStoreMutations"
 import { useSelectedStoreId } from "../../../store"
 import { startOAuth } from "../../../api"
 import type { PlatformId } from "../../../data/platforms"
-import { PLATFORM_META } from "../../../data/platforms"
+import { PLATFORM_META, isOAuthPlatform } from "../../../data/platforms"
 
-const SNS_PLATFORM_IDS: PlatformId[] = ["INSTAGRAM", "FACEBOOK", "NAVER_BLOG"]
+const SNS_PLATFORM_IDS: PlatformId[] = ["INSTAGRAM", "FACEBOOK", "X"]
 
 type Step = 1 | 2 | 3 | 4
 type StoreOnboardingProps = {
@@ -59,6 +59,7 @@ export function StoreOnboarding({
         tone: tones[0],
     })
     const [oauthLoading, setOauthLoading] = useState(false)
+    const [oauthError, setOauthError] = useState<string | null>(null)
     const steps = useMemo(
         () => ["기본 정보", "운영 정보", "확인", "가게 연동"],
         [],
@@ -151,16 +152,32 @@ export function StoreOnboarding({
         }
     }
 
-    const handleOAuth = async () => {
+    const handleSnsOAuth = async (platformId: PlatformId) => {
         if (!selectedStoreId) return
         setOauthLoading(true)
+        setOauthError(null)
+        try {
+            const url = await startOAuth(platformId, selectedStoreId)
+            window.location.href = url
+        } catch (err) {
+            setOauthLoading(false)
+            setOauthError(err instanceof Error ? err.message : "연동을 시작할 수 없습니다.")
+        }
+    }
+
+    const handleMockMapOAuth = async () => {
+        if (!selectedStoreId) return
+        setOauthLoading(true)
+        setOauthError(null)
         try {
             const url = await startOAuth("MOCK_MAP", selectedStoreId)
             window.location.href = url
-        } catch {
+        } catch (err) {
             setOauthLoading(false)
+            setOauthError(err instanceof Error ? err.message : "연동을 시작할 수 없습니다.")
         }
     }
+    const OAUTH_SNS_PLATFORMS = new Set<PlatformId>(["X"])
 
     const inputClass = (key: keyof StoreForm) =>
         `mt-1.5 w-full rounded-xl border bg-white px-3 py-3 text-sm text-[#172033] outline-none placeholder:text-slate-400 focus:border-[#3dd7af] ${errors[key] ? "border-[#d6503b]" : "border-[#ded9cf]"}`
@@ -470,8 +487,7 @@ export function StoreOnboarding({
                                             가게 운영 플랫폼을 연결해주세요.
                                         </h2>
                                         <p className="mt-1 text-xs text-slate-500">
-                                            MAP OAuth 로그인을 통해 가게 정보를
-                                            불러옵니다.
+                                            MockMap 점주 OAuth로 가게를 연결합니다.
                                         </p>
                                     </div>
                                 </div>
@@ -479,8 +495,8 @@ export function StoreOnboarding({
                                 <div className="mt-8 flex flex-col gap-5">
                                     <button
                                         type="button"
-                                        disabled={oauthLoading}
-                                        onClick={handleOAuth}
+                                        disabled={oauthLoading || !selectedStoreId}
+                                        onClick={handleMockMapOAuth}
                                         className="w-full rounded-2xl border border-[#ded9cf] p-5 text-left transition hover:border-[#3dd7af] disabled:cursor-default disabled:opacity-60"
                                     >
                                         <div className="flex items-center justify-between">
@@ -488,14 +504,12 @@ export function StoreOnboarding({
                                                 <p className="font-bold text-[#172033]">
                                                     {PLATFORM_META.MOCK_MAP.name}
                                                 </p>
-
                                                 <p className="mt-1 text-xs text-slate-500">
-                                                    가게 운영 플랫폼
+                                                    MockMap 점주 계정으로 로그인해 리뷰를 연동합니다.
                                                 </p>
                                             </div>
-
                                             <span className="rounded-xl bg-[#172b4d] px-4 py-2 text-xs font-bold text-white">
-                                                {oauthLoading ? "연결 중…" : "OAuth 로그인"}
+                                                {oauthLoading ? "연결 중…" : "연동"}
                                             </span>
                                         </div>
                                     </button>
@@ -507,17 +521,37 @@ export function StoreOnboarding({
                                             SNS 연동
                                         </p>
                                         <div className="grid gap-3 sm:grid-cols-3">
-                                            {SNS_PLATFORM_IDS.map((id) => (
-                                                <div key={id} className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4 opacity-60">
-                                                    <p className="font-semibold">
-                                                        {PLATFORM_META[id].name}
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-slate-500">
-                                                        Coming Soon
-                                                    </p>
-                                                </div>
-                                            ))}
+                                            {SNS_PLATFORM_IDS.map((id) =>
+                                                OAUTH_SNS_PLATFORMS.has(id) ? (
+                                                    <button
+                                                        key={id}
+                                                        type="button"
+                                                        disabled={oauthLoading || !selectedStoreId}
+                                                        onClick={() => handleSnsOAuth(id)}
+                                                        className="rounded-xl border border-[#ded9cf] p-4 text-left transition hover:border-[#3dd7af] disabled:opacity-60"
+                                                    >
+                                                        <p className="font-semibold">
+                                                            {PLATFORM_META[id].name}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-slate-500">
+                                                            {oauthLoading ? "연결 중…" : "OAuth 로그인"}
+                                                        </p>
+                                                    </button>
+                                                ) : isOAuthPlatform(id) ? null : (
+                                                    <div key={id} className="rounded-xl border border-[#ded9cf] bg-[#fafafa] p-4">
+                                                        <p className="font-semibold">
+                                                            {PLATFORM_META[id].name}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-slate-500">
+                                                            공용 계정 (서버 설정)
+                                                        </p>
+                                                    </div>
+                                                ),
+                                            )}
                                         </div>
+                                        {oauthError && (
+                                            <p className="text-xs font-medium text-[#d6503b]">{oauthError}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>

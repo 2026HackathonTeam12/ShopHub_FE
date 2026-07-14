@@ -16,7 +16,7 @@ export {
 export { useReviews, useSetReviews, useReviewsState, type Review } from "./ReviewContext"
 export { usePosts, useSetPosts, usePostsState, type Post } from "./ContentContext"
 export { useUser, useSetUser, type UserProfile } from "./UserContext"
-export { useIntegrations, useSetIntegrations, useIntegrationsState } from "./IntegrationsContext"
+export { useIntegrations, useConnectablePlatforms, useSetIntegrations, useIntegrationsState } from "./IntegrationsContext"
 
 export function AppProvider({ children }: { children: ReactNode }) {
     return (

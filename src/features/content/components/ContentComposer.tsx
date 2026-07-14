@@ -1,17 +1,17 @@
 import { useRef, useState } from "react"
-import { CheckIcon, ChevronDownIcon, ImagePlusIcon, Focus, MapPinIcon, SendIcon, SparklesIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, ImagePlusIcon, Focus, MapPinIcon, SendIcon } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { useSelectedStoreId, useIntegrations } from "../../../store"
-import { usePublishContentMutation } from "../../../hooks/useContentMutations"
+import { usePublishContentMutation, useUploadImagesMutation } from "../../../hooks/useContentMutations"
 import type { PlatformId } from "../../../data/platforms"
-import { PLATFORM_META } from "../../../data/platforms"
+import { PLATFORM_META, isContentChannel } from "../../../data/platforms"
 
 const PLATFORM_DISPLAY: Partial<Record<PlatformId, { icon: LucideIcon; color: string }>> = {
     INSTAGRAM: { icon: Focus, color: "bg-[#f2b0bf]" },
     NAVER_MAP: { icon: MapPinIcon, color: "bg-[#76d1a0]" },
     GOOGLE_MAP: { icon: MapPinIcon, color: "bg-[#6f9df2]" },
     MOCK_MAP: { icon: MapPinIcon, color: "bg-[#76d1a0]" },
-    NAVER_BLOG: { icon: MapPinIcon, color: "bg-[#bce8ce]" },
+    X: { icon: MapPinIcon, color: "bg-[#dbeafe]" },
     FACEBOOK: { icon: MapPinIcon, color: "bg-[#cbdcf6]" },
     KAKAO_MAP: { icon: MapPinIcon, color: "bg-[#f9e090]" },
 }
@@ -20,10 +20,13 @@ export function ContentComposer() {
     const selectedStoreId = useSelectedStoreId()
     const integrations = useIntegrations()
     const publishMutation = usePublishContentMutation()
+    const uploadImagesMutation = useUploadImagesMutation()
     const titleRef = useRef<HTMLInputElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const [body, setBody] = useState(
         "비가 오는 오늘, 따뜻한 라떼 한 잔으로 잠깐 쉬어가세요.\n오후 2시부터는 갓 구운 휘낭시에가 함께 나옵니다."
     )
+    const [imageUrls, setImageUrls] = useState<string[]>([])
     const [selectedTargets, setSelectedTargets] = useState<PlatformId[]>([])
     const [published, setPublished] = useState(false)
     const toggleTarget = (id: PlatformId) =>
@@ -31,6 +34,7 @@ export function ContentComposer() {
             current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
         )
     const targets = integrations.flatMap((id) => {
+        if (!isContentChannel(id)) return []
         const display = PLATFORM_DISPLAY[id]
         return display ? [{ id, ...display }] : []
     })
@@ -81,26 +85,43 @@ export function ContentComposer() {
                     placeholder="고객에게 전할 이야기를 작성해 주세요."
                 />
                 <div className="mt-3 flex items-center justify-between border-t border-[#eeeae2] pt-3">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={async (event) => {
+                            if (!selectedStoreId) return
+                            const files = Array.from(event.target.files ?? [])
+                            if (files.length === 0) return
+                            const result = await uploadImagesMutation.run(selectedStoreId, files)
+                            if (result) {
+                                setImageUrls((current) => [...current, ...result.img_urls])
+                            }
+                            event.target.value = ""
+                        }}
+                    />
                     <button
                         type="button"
-                        className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-[#172033]"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={!selectedStoreId || uploadImagesMutation.loading}
+                        className={`flex items-center gap-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${imageUrls.length > 0 ? "text-[#168165]" : "text-slate-500 hover:text-[#172033]"}`}
                     >
-                        <ImagePlusIcon size={16} aria-hidden="true" />
-                        사진 추가
+                        {imageUrls.length > 0 ? <CheckIcon size={16} aria-hidden="true" /> : <ImagePlusIcon size={16} aria-hidden="true" />}
+                        {uploadImagesMutation.loading
+                            ? "업로드 중…"
+                            : imageUrls.length > 0
+                              ? `사진 ${imageUrls.length}장 추가됨`
+                              : "사진 추가"}
                     </button>
                     <span className="font-mono-label text-[10px] text-slate-400">{body.length} / 2,200</span>
                 </div>
+                {uploadImagesMutation.error && (
+                    <p className="mt-2 text-[11px] font-medium text-[#d6503b]">{uploadImagesMutation.error}</p>
+                )}
                 <div className="mt-4 rounded-xl bg-[#f7f5f0] p-3.5">
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs font-bold text-[#172033]">게시할 채널</p>
-                        <button
-                            type="button"
-                            className="flex items-center gap-1 text-[11px] font-semibold text-[#168165] hover:underline"
-                        >
-                            <SparklesIcon size={13} aria-hidden="true" />
-                            채널별 최적화
-                        </button>
-                    </div>
+                    <p className="text-xs font-bold text-[#172033]">게시할 채널</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                         {targets.map((target) => {
                             const Icon = target.icon
@@ -132,15 +153,20 @@ export function ContentComposer() {
                     <button
                         type="button"
                         onClick={async () => {
+                            if (!selectedStoreId) return
                             const ok = await publishMutation.run({
                                 storeId: selectedStoreId,
                                 title: titleRef.current?.value ?? "",
                                 body,
                                 channels: selectedTargets,
+                                imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
                             })
-                            if (ok) setPublished(true)
+                            if (ok) {
+                                setPublished(true)
+                                setImageUrls([])
+                            }
                         }}
-                        disabled={selectedTargets.length === 0 || publishMutation.loading}
+                        disabled={!selectedStoreId || selectedTargets.length === 0 || publishMutation.loading}
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#172b4d] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#223b66] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         {published ? (

@@ -1,31 +1,49 @@
 import { useEffect, useMemo, useState } from "react"
 import { BotIcon, SearchIcon, SendIcon, StarIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
-import { useReviews, useSelectedStoreId } from "../../../store"
+import { useReviews, useSelectedStoreId, useIntegrations } from "../../../store"
 import { getRelativeTime } from "../../../utils/timeUtils"
-import { useFetchReviewsMutation, useGenerateDraftMutation, useSendReplyMutation } from "../../../hooks/useReviewMutations"
+import { useFetchReviewsMutation, useGenerateDraftMutation, useSendReplyMutation, useSyncMockMapReviewsMutation } from "../../../hooks/useReviewMutations"
 
 export function InboxPage({ storeName }: { storeName: string }) {
     const selectedStoreId = useSelectedStoreId()
     const fetchReviewsMutation = useFetchReviewsMutation()
+    const syncReviewsMutation = useSyncMockMapReviewsMutation()
     const generateDraftMutation = useGenerateDraftMutation()
     const sendReplyMutation = useSendReplyMutation()
     const reviews = useReviews()
+    const integrations = useIntegrations()
+    const mockMapConnected = integrations.includes("MOCK_MAP")
     const [query, setQuery] = useState("")
     const [selectedId, setSelectedId] = useState("")
     const [draft, setDraft] = useState("")
 
+    const storeReviews = useMemo(
+        () => reviews.filter((review) => !selectedStoreId || review.storeId === selectedStoreId),
+        [reviews, selectedStoreId]
+    )
+
     useEffect(() => {
-        if (selectedStoreId) fetchReviewsMutation.run(selectedStoreId)
-    }, [selectedStoreId]) // eslint-disable-line react-hooks/exhaustive-deps
+        setSelectedId("")
+        setDraft("")
+    }, [selectedStoreId])
+
+    useEffect(() => {
+        if (!selectedStoreId) return
+        if (mockMapConnected) {
+            syncReviewsMutation.run(selectedStoreId)
+        } else {
+            fetchReviewsMutation.run(selectedStoreId)
+        }
+    }, [selectedStoreId, mockMapConnected]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const visible = useMemo(
-        () => reviews.filter((review) => review.authorName.includes(query) || review.content.includes(query)),
-        [query, reviews]
+        () => storeReviews.filter((review) => review.authorName.includes(query) || review.content.includes(query)),
+        [query, storeReviews]
     )
-    const selected = reviews.find((review) => review.id === selectedId) ?? reviews[0]
+    const selected = storeReviews.find((review) => review.id === selectedId) ?? storeReviews[0]
 
-    if (fetchReviewsMutation.loading) {
+    if (fetchReviewsMutation.loading || syncReviewsMutation.loading) {
         return (
             <>
                 <PageHeader
@@ -38,7 +56,7 @@ export function InboxPage({ storeName }: { storeName: string }) {
         )
     }
 
-    if (fetchReviewsMutation.error) {
+    if (fetchReviewsMutation.error || syncReviewsMutation.error) {
         return (
             <>
                 <PageHeader
@@ -46,7 +64,9 @@ export function InboxPage({ storeName }: { storeName: string }) {
                     title="리뷰"
                     description="고객 리뷰를 확인하고 AI로 답글 초안을 작성하세요."
                 />
-                <p className="mt-8 text-center text-sm text-[#d6503b]">{fetchReviewsMutation.error}</p>
+                <p className="mt-8 text-center text-sm text-[#d6503b]">
+                    {fetchReviewsMutation.error ?? syncReviewsMutation.error}
+                </p>
             </>
         )
     }
@@ -78,7 +98,7 @@ export function InboxPage({ storeName }: { storeName: string }) {
                                 placeholder="리뷰 검색"
                             />
                         </label>
-                        <p className="mt-3 text-[11px] font-semibold text-slate-500">최신 동기화 · {reviews.length}개</p>
+                        <p className="mt-3 text-[11px] font-semibold text-slate-500">최신 동기화 · {storeReviews.length}개</p>
                     </div>
                     <div className="divide-y divide-[#eeeae2]">
                         {visible.map((review) => (

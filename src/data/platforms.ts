@@ -13,9 +13,9 @@ export interface PlatformMeta {
 }
 
 export const PLATFORM_META: Record<PlatformId, PlatformMeta> = {
-    INSTAGRAM: { name: "Instagram", available: false },
+    INSTAGRAM: { name: "Instagram", available: true },
     NAVER_BLOG: { name: "네이버 블로그", available: false },
-    FACEBOOK: { name: "Facebook", available: false },
+    FACEBOOK: { name: "Facebook", available: true },
     MOCK_MAP: { name: "MAP", available: true },
     KAKAO_MAP: { name: "카카오맵", available: false },
     GOOGLE_MAP: { name: "Google Business", available: false },

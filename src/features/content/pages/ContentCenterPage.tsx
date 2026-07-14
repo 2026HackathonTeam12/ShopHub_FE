@@ -1,9 +1,34 @@
 import { useEffect, useState } from "react"
-import { FileTextIcon, PlusIcon, SparklesIcon, XIcon } from "lucide-react"
+import { CheckIcon, FileTextIcon, LoaderIcon, PlusIcon, SparklesIcon, XIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
 import { usePosts, useSelectedStoreId, type Post } from "../../../store"
 import { useFetchDashboardMutation } from "../../../hooks/useDashboardMutations"
+import { PLATFORM_META } from "../../../data/platforms"
+import type { PlatformId } from "../../../data/platforms"
 
+type PlatformStatus = "PENDING" | "SUCCESS" | "FAILED"
+
+const BADGE_STYLE: Record<PlatformStatus, string> = {
+    SUCCESS: "bg-[#eafaf5] text-[#168165]",
+    FAILED: "bg-[#ffede9] text-[#d6503b]",
+    PENDING: "bg-[#f0f4ff] text-[#42526e]",
+}
+
+const STATUS_ICON: Record<PlatformStatus, React.ReactNode> = {
+    SUCCESS: <CheckIcon size={10} />,
+    FAILED: <XIcon size={10} />,
+    PENDING: <LoaderIcon size={10} className="animate-spin" />,
+}
+
+const STATUS_LABEL: Record<PlatformStatus, string> = {
+    SUCCESS: "게시됨",
+    FAILED: "실패",
+    PENDING: "게시 중",
+}
+
+function platformName(platform: string): string {
+    return PLATFORM_META[platform as PlatformId]?.name ?? platform
+}
 
 export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
     const posts = usePosts()
@@ -41,11 +66,18 @@ export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
                                 <div className="min-w-0 flex-1">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <h2 className="text-sm font-bold text-[#172033]">{post.title}</h2>
-                                        {post.channels.split(" · ").map((ch) => (
-                                            <span key={ch} className="rounded-md bg-[#eef1f7] px-2 py-0.5 text-xs font-bold text-[#42526e]">
-                                                {ch}
-                                            </span>
-                                        ))}
+                                        {post.platforms.map(({ platform, status }) => {
+                                            const s = status as PlatformStatus
+                                            return (
+                                                <span
+                                                    key={platform}
+                                                    className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold ${BADGE_STYLE[s]}`}
+                                                >
+                                                    {STATUS_ICON[s]}
+                                                    {platformName(platform)}
+                                                </span>
+                                            )
+                                        })}
                                     </div>
                                     <p className="mt-1 text-xs text-slate-500">{post.date}</p>
                                 </div>
@@ -110,16 +142,28 @@ export function ContentCenterPage({ onCompose }: { onCompose: () => void }) {
                                 </button>
                             </div>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                            {viewPost.channels.split(" · ").map((ch) => (
-                                <span key={ch} className="rounded-md bg-[#eef1f7] px-2 py-0.5 text-xs font-bold text-[#42526e]">
-                                    {ch}
-                                </span>
-                            ))}
-                        </div>
                         <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[#42526e]">
                             {viewPost.body}
                         </p>
+                        {viewPost.platforms.length > 0 && (
+                            <div className="mt-5 rounded-xl bg-[#f7f5f0] p-4">
+                                <p className="text-xs font-bold text-[#172033]">플랫폼 게시 현황</p>
+                                <div className="mt-3 flex flex-col gap-2.5">
+                                    {viewPost.platforms.map(({ platform, status }) => {
+                                        const s = status as PlatformStatus
+                                        return (
+                                            <div key={platform} className="flex items-center justify-between">
+                                                <span className="text-xs text-[#42526e]">{platformName(platform)}</span>
+                                                <span className={`flex items-center gap-1 text-[11px] font-bold ${s === "SUCCESS" ? "text-[#168165]" : s === "FAILED" ? "text-[#d6503b]" : "text-slate-400"}`}>
+                                                    {STATUS_ICON[s]}
+                                                    {STATUS_LABEL[s]}
+                                                </span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

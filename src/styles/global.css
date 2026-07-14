@@ -1,37 +1,85 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap");
-
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
 @layer base {
+    @font-face {
+        font-family: 'Pretendard Variable';
+        font-style: normal;
+        font-display: swap;
+        font-weight: 45 920;
+        src: url('/fonts/PretendardVariable.woff2') format('woff2-variations');
+    }
+
+    :root {
+        /* Surface */
+        --canvas:  #F5F6F8;
+        --surface: #FFFFFF;
+
+        /* Ink */
+        --ink: #111218;
+
+        /* Panel — dark surfaces (AI panels, sidebar, auth left) */
+        --panel:       #1A1C24;
+        --panel-hover: #222533;
+
+        /* Single accent — Toss-spirit blue */
+        --accent:         #3E87F4;
+        --accent-hover:   #2D76E3;
+        --accent-muted:   #EDF4FF;
+        --accent-on-dark: #7FBAFC;
+
+        /* Semantic */
+        --success:        #0D7A5F;
+        --success-bg:     #EAF7F2;
+        --success-border: #A3D9CC;
+        --error:          #C0392B;
+        --error-bg:       #FDECEA;
+        --error-border:   #F5BDB8;
+
+        /* Borders — cool gray system */
+        --border:        #E2E5EC;
+        --border-subtle: #EDF0F5;
+
+        /* Text roles */
+        --text-secondary: #4A5568;
+        --text-muted:     #8C96A8;
+
+        /* Misc */
+        --star-gold: #F4B840;
+    }
+
     * {
         box-sizing: border-box;
     }
+
     body {
         margin: 0;
         min-width: 320px;
-        background: #f5f2eb;
-        color: #172033;
-        font-family: "Noto Sans KR", system-ui, sans-serif;
+        background: var(--canvas);
+        color: var(--ink);
+        font-family: 'Pretendard Variable', system-ui, sans-serif;
     }
+
     button,
     input,
     textarea,
     select {
         font: inherit;
     }
+
     button:focus-visible,
     a:focus-visible,
     input:focus-visible,
     textarea:focus-visible {
-        outline: 3px solid rgba(61, 215, 175, 0.7);
+        outline: 2px solid rgba(62, 135, 244, 0.5);
         outline-offset: 2px;
     }
 }
+
 @layer utilities {
     .font-mono-label {
-        font-family: "DM Mono", monospace;
+        font-family: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
     }
     .scrollbar-none::-webkit-scrollbar {
         display: none;

@@ -12,7 +12,8 @@ export const useSyncMockMapReviewsMutation = createMutationHook<string, Review[]
     .request((storeId) => storeId)
     .api(syncMockMapReviews)
     .update((reviews, { setReviews }) => {
-        setReviews(reviews)
+        // Always replace with the requested store payload (server already scoped).
+        setReviews(Array.isArray(reviews) ? reviews : [])
     })
     .build()
 
@@ -24,7 +25,7 @@ export const useFetchReviewsMutation = createMutationHook<string, Review[]>()
     .request((storeId) => storeId)
     .api(fetchReviews)
     .update((reviews, { setReviews }) => {
-        setReviews(reviews)
+        setReviews(Array.isArray(reviews) ? reviews : [])
     })
     .build()
 

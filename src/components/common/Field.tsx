@@ -10,15 +10,15 @@ type FieldProps = {
 
 export function Field({ label, htmlFor, error, hint, children }: FieldProps) {
     return (
-        <label htmlFor={htmlFor} className="block text-xs font-bold text-[#42526e]">
+        <label htmlFor={htmlFor} className="block text-caption font-bold text-secondary">
             {label}
             {children}
             {error ? (
-                <span id={`${htmlFor}-error`} className="mt-1.5 block text-[11px] font-medium text-[#d6503b]">
+                <span id={`${htmlFor}-error`} className="mt-1.5 block text-caption font-medium text-error">
                     {error}
                 </span>
             ) : hint ? (
-                <span className="mt-1.5 block text-[11px] font-medium text-slate-400">{hint}</span>
+                <span className="mt-1.5 block text-caption font-medium text-muted">{hint}</span>
             ) : null}
         </label>
     )

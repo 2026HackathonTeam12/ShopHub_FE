@@ -66,32 +66,32 @@ export function ReviewInbox() {
 
     return (
         <section
-            className="rounded-2xl border border-[#ded9cf] bg-white shadow-[0_8px_24px_rgba(23,32,51,0.05)]"
+            className="rounded-[20px] border border-border bg-surface"
             aria-labelledby="reviews-heading"
         >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eeeae2] px-5 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
                 <div>
                     <div className="flex items-center gap-2">
-                        <h2 id="reviews-heading" className="text-base font-bold text-[#172033]">
+                        <h2 id="reviews-heading" className="text-heading font-bold text-ink">
                             최근 리뷰
                         </h2>
                         {storeReviews.length > 0 && (
-                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ffede9] px-1 text-[10px] font-extrabold text-[#d6503b]">
+                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-error-bg px-1 text-[10px] font-extrabold text-error">
                                 {storeReviews.filter((r) => r.reply === null).length}
                             </span>
                         )}
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <p className="mt-0.5 text-caption text-muted">
                         최신 동기화된 리뷰 중 답글이 필요한 내용을 확인하세요.
                     </p>
                 </div>
-                <div className="flex rounded-lg bg-[#f3f0e9] p-1" role="tablist" aria-label="리뷰 보기">
+                <div className="flex rounded-xl bg-canvas p-1" role="tablist" aria-label="리뷰 보기">
                     <button
                         type="button"
                         role="tab"
                         aria-selected={filter === "pending"}
                         onClick={() => setFilter("pending")}
-                        className={`rounded-md px-2.5 py-1.5 text-[11px] font-bold ${filter === "pending" ? "bg-white text-[#172033] shadow-sm" : "text-slate-500"}`}
+                        className={`rounded-lg px-2.5 py-1.5 text-caption font-bold ${filter === "pending" ? "bg-surface text-ink shadow-sm" : "text-muted"}`}
                     >
                         미답변
                     </button>
@@ -100,18 +100,18 @@ export function ReviewInbox() {
                         role="tab"
                         aria-selected={filter === "all"}
                         onClick={() => setFilter("all")}
-                        className={`rounded-md px-2.5 py-1.5 text-[11px] font-bold ${filter === "all" ? "bg-white text-[#172033] shadow-sm" : "text-slate-500"}`}
+                        className={`rounded-lg px-2.5 py-1.5 text-caption font-bold ${filter === "all" ? "bg-surface text-ink shadow-sm" : "text-muted"}`}
                     >
                         전체
                     </button>
                 </div>
             </div>
             {redirectError && (
-                <p className="border-b border-[#eeeae2] px-5 py-3 text-xs font-medium text-[#d6503b]">{redirectError}</p>
+                <p className="border-b border-border-subtle px-5 py-3 text-caption font-medium text-error">{redirectError}</p>
             )}
-            <div className="divide-y divide-[#eeeae2]">
+            <div className="divide-y divide-border-subtle">
                 {visibleReviews.length === 0 ? (
-                    <p className="px-5 py-8 text-center text-xs text-slate-500">표시할 리뷰가 없습니다.</p>
+                    <p className="px-5 py-8 text-center text-caption text-muted">표시할 리뷰가 없습니다.</p>
                 ) : (
                     visibleReviews.map((review) => {
                         const isActive = activeReviewId === review.id
@@ -124,14 +124,14 @@ export function ReviewInbox() {
                             <article key={review.id} className="px-5 py-4">
                                 <div className="flex gap-3">
                                     <div
-                                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${getAccent(review.id)} text-[11px] font-extrabold text-[#172033]`}
+                                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${getAccent(review.id)} text-caption font-extrabold text-ink`}
                                     >
                                         {getInitials(review.authorName)}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                            <h3 className="text-xs font-bold text-[#172033]">{review.authorName}</h3>
-                                            <span className="text-[10px] text-slate-400">
+                                            <h3 className="text-caption font-bold text-ink">{review.authorName}</h3>
+                                            <span className="text-[10px] text-muted">
                                                 {review.platform} · {getRelativeTime(review.reviewedAt)}
                                             </span>
                                         </div>
@@ -140,14 +140,14 @@ export function ReviewInbox() {
                                                 <StarIcon
                                                     key={index}
                                                     size={12}
-                                                    className="fill-[#f4b840] text-[#f4b840]"
+                                                    className="fill-star-gold text-star-gold"
                                                     aria-hidden="true"
                                                 />
                                             ))}
                                         </div>
-                                        <p className="mt-2 text-xs leading-5 text-slate-600">{review.content}</p>
+                                        <p className="mt-2 text-caption leading-5 text-secondary">{review.content}</p>
                                         {review.reply && (
-                                            <p className="mt-3 rounded-xl bg-[#f1f7f6] px-3 py-2 text-xs leading-5 text-[#29425b]">
+                                            <p className="mt-3 rounded-xl bg-accent-muted px-3 py-2 text-caption leading-5 text-ink">
                                                 {review.reply}
                                             </p>
                                         )}
@@ -157,15 +157,15 @@ export function ReviewInbox() {
                                                     type="button"
                                                     disabled={generateDraftMutation.loading}
                                                     onClick={() => handleCreateDraft(review.id)}
-                                                    className="flex items-center gap-1.5 rounded-lg border border-[#d8dcd9] px-2.5 py-1.5 text-[11px] font-bold text-[#29425b] transition-colors hover:border-[#3dd7af] hover:bg-[#eafaf5] disabled:opacity-60"
+                                                    className="flex items-center gap-1.5 rounded-xl border border-border px-2.5 py-1.5 text-caption font-bold text-secondary transition-colors hover:border-accent hover:bg-accent-muted disabled:opacity-60"
                                                 >
-                                                    <BotIcon size={14} className="text-[#168165]" aria-hidden="true" />
+                                                    <BotIcon size={14} className="text-accent" aria-hidden="true" />
                                                     AI 답글 만들기
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleManualReply(review)}
-                                                    className="text-[11px] font-semibold text-slate-500 hover:text-[#172033]"
+                                                    className="text-caption font-semibold text-muted hover:text-ink"
                                                 >
                                                     직접 답글
                                                 </button>
@@ -174,12 +174,12 @@ export function ReviewInbox() {
                                         {review.reply === null && isActive && (
                                             <div className="mt-3 space-y-2">
                                                 {generateDraftMutation.error && (
-                                                    <p className="text-[11px] font-medium text-[#d6503b]">
+                                                    <p className="text-caption font-medium text-error">
                                                         {generateDraftMutation.error}
                                                     </p>
                                                 )}
                                                 {sendReplyMutation.error && (
-                                                    <p className="text-[11px] font-medium text-[#d6503b]">
+                                                    <p className="text-caption font-medium text-error">
                                                         {sendReplyMutation.error}
                                                     </p>
                                                 )}
@@ -192,7 +192,7 @@ export function ReviewInbox() {
                                                         }))
                                                     }
                                                     disabled={isWorking}
-                                                    className="min-h-[72px] w-full rounded-xl border border-[#ded9cf] p-3 text-xs leading-5 outline-none focus:border-[#3dd7af] disabled:opacity-60"
+                                                    className="min-h-[72px] w-full rounded-xl border border-border p-3 text-caption leading-5 outline-none focus:border-accent disabled:opacity-60"
                                                     placeholder="답글을 작성하거나 AI 초안을 생성하세요."
                                                 />
                                                 <div className="flex items-center gap-2">
@@ -200,7 +200,7 @@ export function ReviewInbox() {
                                                         type="button"
                                                         disabled={!draft.trim() || isWorking}
                                                         onClick={() => handleSendReply(review.id)}
-                                                        className="flex items-center gap-1 rounded-lg bg-[#172b4d] px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-40"
+                                                        className="flex items-center gap-1 rounded-xl bg-accent px-3 py-1.5 text-caption font-bold text-white disabled:opacity-40"
                                                     >
                                                         <SendIcon size={12} />
                                                         {sendReplyMutation.loading ? "게시 중…" : "답글 게시"}
@@ -209,7 +209,7 @@ export function ReviewInbox() {
                                                         type="button"
                                                         disabled={isWorking}
                                                         onClick={() => handleCreateDraft(review.id)}
-                                                        className="text-[11px] font-semibold text-[#168165] hover:underline disabled:opacity-60"
+                                                        className="text-caption font-semibold text-accent hover:underline disabled:opacity-60"
                                                     >
                                                         {generateDraftMutation.loading ? "초안 생성 중…" : "AI 다시 생성"}
                                                     </button>
@@ -217,7 +217,7 @@ export function ReviewInbox() {
                                                         type="button"
                                                         disabled={isWorking}
                                                         onClick={() => setActiveReviewId(null)}
-                                                        className="text-[11px] font-semibold text-slate-400 hover:text-[#172033]"
+                                                        className="text-caption font-semibold text-muted hover:text-ink"
                                                     >
                                                         취소
                                                     </button>

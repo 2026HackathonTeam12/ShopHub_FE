@@ -12,19 +12,29 @@ import {
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
+import { Button } from "../../../components/ui"
 import type { BusinessHour, StoreProfile } from "../../../data/store"
 import type { PlatformId } from "../../../data/platforms"
 import { PLATFORM_META, isOAuthPlatform } from "../../../data/platforms"
 import { useIntegrations, useConnectablePlatforms } from "../../../store"
-import { useAddMenuMutation, useDeleteMenuMutation, useUpdateBasicMutation, useUpdateHoursMutation } from "../../../hooks/useStoreMutations"
-import { useDisconnectOAuthMutation, useFetchIntegrationsMutation } from "../../../hooks/useIntegrationMutations"
+import {
+    useAddMenuMutation,
+    useDeleteMenuMutation,
+    useUpdateBasicMutation,
+    useUpdateHoursMutation,
+} from "../../../hooks/useStoreMutations"
+import {
+    useDisconnectOAuthMutation,
+    useFetchIntegrationsMutation,
+} from "../../../hooks/useIntegrationMutations"
+import { useFetchReviewsMutation } from "../../../hooks/useReviewMutations"
 import { startOAuth } from "../../../api"
 
 const PLATFORM_ICONS: Partial<Record<PlatformId, LucideIcon>> = {
-    MOCK_MAP: MapPinIcon,
+    MOCK_MAP:  MapPinIcon,
     INSTAGRAM: CameraIcon,
-    X: AtSignIcon,
-    FACEBOOK: UsersIcon,
+    X:         AtSignIcon,
+    FACEBOOK:  UsersIcon,
 }
 
 const DISPLAY_PLATFORM_IDS: PlatformId[] = ["MOCK_MAP", "INSTAGRAM", "X", "FACEBOOK"]
@@ -52,27 +62,34 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const addMenuMutation = useAddMenuMutation()
     const deleteMenuMutation = useDeleteMenuMutation()
     const fetchIntegrations = useFetchIntegrationsMutation()
+    const fetchReviews = useFetchReviewsMutation()
     const disconnectOAuth = useDisconnectOAuthMutation()
     const [oauthLoading, setOauthLoading] = useState(false)
     const [oauthError, setOauthError] = useState<string | null>(null)
     const saving = updateBasicMutation.loading || updateHoursMutation.loading
 
-    const handleConnect = useCallback(async (platformId: PlatformId) => {
-        setOauthLoading(true)
-        setOauthError(null)
-        try {
-            const url = await startOAuth(platformId, store.id)
-            window.location.href = url
-        } catch (err) {
-            setOauthLoading(false)
-            setOauthError(err instanceof Error ? err.message : "연동을 시작할 수 없습니다.")
-        }
-    }, [store.id])
+    const handleConnect = useCallback(
+        async (platformId: PlatformId) => {
+            setOauthLoading(true)
+            setOauthError(null)
+            try {
+                const url = await startOAuth(platformId, store.id)
+                window.location.href = url
+            } catch (err) {
+                setOauthLoading(false)
+                setOauthError(err instanceof Error ? err.message : "연동을 시작할 수 없습니다.")
+            }
+        },
+        [store.id],
+    )
 
     const handleDisconnect = async (platformId: PlatformId) => {
         const ok = await disconnectOAuth.run({ platformId, storeId: store.id })
         if (ok) {
             await fetchIntegrations.run(store.id)
+            if (platformId === "MOCK_MAP") {
+                await fetchReviews.run(store.id)
+            }
         }
     }
 
@@ -84,18 +101,12 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                 storeId: store.id,
                 name: (els.namedItem("name") as HTMLInputElement).value,
                 phone: (els.namedItem("phone") as HTMLInputElement).value,
-                introduction: (
-                    els.namedItem("introduction") as HTMLTextAreaElement
-                ).value,
+                introduction: (els.namedItem("introduction") as HTMLTextAreaElement).value,
                 address: (els.namedItem("address") as HTMLInputElement).value,
                 category: (els.namedItem("category") as HTMLInputElement).value,
-                toneOfVoice: (els.namedItem("toneOfVoice") as HTMLInputElement)
-                    .value,
+                toneOfVoice: (els.namedItem("toneOfVoice") as HTMLInputElement).value,
             }),
-            updateHoursMutation.run({
-                storeId: store.id,
-                businessHours,
-            }),
+            updateHoursMutation.run({ storeId: store.id, businessHours }),
         ])
         if (basicOk && hoursOk) {
             setSaved(true)
@@ -106,14 +117,8 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const handleAddMenu = async () => {
         const trimmed = newMenu.trim()
         if (!trimmed) return
-        const ok = await addMenuMutation.run({
-            storeId: store.id,
-            name: trimmed,
-            description: "",
-        })
-        if (ok) {
-            setNewMenu("")
-        }
+        const ok = await addMenuMutation.run({ storeId: store.id, name: trimmed, description: "" })
+        if (ok) setNewMenu("")
     }
 
     return (
@@ -123,100 +128,73 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                 title="가게 정보"
                 description="콘텐츠 AI와 고객 응대에 사용하는 가게의 기준 정보입니다."
                 action={
-                    <button
-                        type="button"
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        icon={<CheckIcon size={15} />}
+                        loading={saving}
                         onClick={handleSave}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66] disabled:opacity-60"
                     >
-                        <CheckIcon size={16} />{" "}
                         {saving ? "저장 중…" : "변경사항 저장"}
-                    </button>
+                    </Button>
                 }
             />
+
+            {/* Success toast */}
             {saved && (
                 <div
                     role="status"
-                    className="mb-5 flex items-center justify-between rounded-xl border border-[#9bdcc8] bg-[#eafaf5] px-4 py-3 text-sm font-semibold text-[#168165]"
+                    className="mb-5 flex items-center justify-between rounded-lg border border-success-border bg-success-bg px-4 py-3 text-body font-semibold text-success"
                 >
                     가게 정보가 저장되었어요. 다음 AI 초안부터 반영됩니다.
-                    <CheckIcon size={17} />
+                    <CheckIcon size={16} />
                 </div>
             )}
             {updateBasicMutation.error && (
-                <p className="mb-5 text-sm font-medium text-[#d6503b]">
+                <p className="mb-5 text-body font-medium text-error">
                     {updateBasicMutation.error}
                 </p>
             )}
             {updateHoursMutation.error && (
-                <p className="mb-5 text-sm font-medium text-[#d6503b]">
+                <p className="mb-5 text-body font-medium text-error">
                     {updateHoursMutation.error}
                 </p>
             )}
 
-            <div className="mx-auto max-w-4xl space-y-6">
-                <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm">
+            <div className="mx-auto max-w-3xl space-y-8">
+                {/* Basic info */}
+                <section className="rounded-[20px] border border-border bg-surface p-5">
                     <div className="flex items-center gap-2">
-                        <Store size={18} className="text-[#42526e]" />
+                        <Store size={17} className="text-secondary" />
                         <div>
-                            <h2 className="text-base font-bold">기본 정보</h2>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                                고객 응대와 AI 콘텐츠의 기본 맥락으로
-                                사용됩니다.
+                            <h2 className="text-heading font-semibold text-ink">기본 정보</h2>
+                            <p className="mt-0.5 text-caption text-muted">
+                                고객 응대와 AI 콘텐츠의 기본 맥락으로 사용됩니다.
                             </p>
                         </div>
                     </div>
-                    <form
-                        ref={basicFormRef}
-                        onSubmit={(e) => e.preventDefault()}
-                    >
+                    <form ref={basicFormRef} onSubmit={(e) => e.preventDefault()}>
                         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                            <Field
-                                label="가게 이름"
-                                defaultValue={store.name}
-                                name="name"
-                            />
-                            <Field
-                                label="대표 전화"
-                                defaultValue={store.phone}
-                                name="phone"
-                            />
+                            <Field label="가게 이름"    defaultValue={store.name}         name="name" />
+                            <Field label="대표 전화"    defaultValue={store.phone}        name="phone" />
                             <div className="sm:col-span-2">
-                                <Field
-                                    label="소개글"
-                                    defaultValue={store.introduction}
-                                    textarea
-                                    name="introduction"
-                                />
+                                <Field label="소개글"   defaultValue={store.introduction} name="introduction" textarea />
                             </div>
                             <div className="sm:col-span-2">
-                                <Field
-                                    label="주소"
-                                    defaultValue={store.address}
-                                    name="address"
-                                />
+                                <Field label="주소"     defaultValue={store.address}      name="address" />
                             </div>
-                            <Field
-                                label="업종"
-                                defaultValue={store.category}
-                                name="category"
-                            />
-                            <Field
-                                label="가게의 말투"
-                                defaultValue={store.toneOfVoice}
-                                name="toneOfVoice"
-                            />
+                            <Field label="업종"         defaultValue={store.category}     name="category" />
+                            <Field label="가게의 말투"  defaultValue={store.toneOfVoice}  name="toneOfVoice" />
                         </div>
                     </form>
                 </section>
 
-                <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm">
-                    <div>
-                        <h2 className="text-base font-bold">연동된 플랫폼</h2>
-                        <p className="mt-0.5 text-xs text-slate-500">
-                            리뷰와 콘텐츠를 관리할 플랫폼을 연동합니다.
-                        </p>
-                    </div>
+                {/* Platform integrations */}
+                <section className="rounded-[20px] border border-border bg-surface p-5">
+                    <h2 className="text-heading font-semibold text-ink">연동된 플랫폼</h2>
+                    <p className="mt-0.5 text-caption text-muted">
+                        리뷰와 콘텐츠를 관리할 플랫폼을 연동합니다.
+                    </p>
 
                     <div className="mt-5 grid gap-3 sm:grid-cols-2">
                         {DISPLAY_PLATFORM_IDS.map((id) => {
@@ -229,22 +207,17 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                             return (
                                 <div
                                     key={id}
-                                    className="flex items-center justify-between rounded-xl border border-[#ded9cf] p-4"
+                                    className="flex items-center justify-between rounded-lg border border-border p-4"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7f5f0]">
-                                            <Icon
-                                                size={18}
-                                                className="text-[#42526e]"
-                                            />
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-canvas">
+                                            <Icon size={17} className="text-secondary" />
                                         </div>
-
                                         <div>
-                                            <p className="text-sm font-bold text-[#172033]">
+                                            <p className="text-body font-semibold text-ink">
                                                 {meta.name}
                                             </p>
-
-                                            <p className="text-xs text-slate-500">
+                                            <p className="text-caption text-muted">
                                                 {connected ? "연동 완료" : "아직 연동되지 않았습니다."}
                                             </p>
                                         </div>
@@ -252,7 +225,7 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
 
                                     {connected ? (
                                         <div className="flex items-center gap-2">
-                                            <span className="rounded-full bg-[#eafaf5] px-3 py-1 text-xs font-bold text-[#168165]">
+                                            <span className="rounded-full bg-success-bg px-3 py-1 text-caption font-semibold text-success">
                                                 연동됨
                                             </span>
                                             {oauthPlatform && (
@@ -260,22 +233,23 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                                                     type="button"
                                                     onClick={() => handleDisconnect(id)}
                                                     disabled={disconnectOAuth.loading}
-                                                    className="text-xs font-semibold text-slate-400 hover:text-[#d6503b]"
+                                                    className="text-caption font-semibold text-muted hover:text-error"
                                                 >
                                                     해제
                                                 </button>
                                             )}
                                         </div>
                                     ) : oauthPlatform && meta.available && connectable ? (
-                                        <button
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            loading={oauthLoading}
                                             onClick={() => handleConnect(id)}
-                                            disabled={oauthLoading}
-                                            className="rounded-lg bg-[#172b4d] px-3 py-2 text-xs font-bold text-white hover:bg-[#223b66] disabled:opacity-60"
                                         >
                                             연동
-                                        </button>
+                                        </Button>
                                     ) : (
-                                        <span className="text-xs font-semibold text-slate-400">
+                                        <span className="text-caption font-semibold text-muted">
                                             준비 중
                                         </span>
                                     )}
@@ -283,58 +257,60 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                             )
                         })}
                     </div>
+
                     {oauthError && (
-                        <p className="mt-3 text-xs font-medium text-[#d6503b]">{oauthError}</p>
+                        <p className="mt-3 text-caption font-medium text-error">{oauthError}</p>
                     )}
                 </section>
 
-                <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm">
+                {/* Business hours */}
+                <section className="rounded-[20px] border border-border bg-surface p-5">
                     <div className="flex items-center gap-2">
-                        <Clock3Icon size={18} className="text-[#42526e]" />
+                        <Clock3Icon size={17} className="text-secondary" />
                         <div>
-                            <h2 className="text-base font-bold">영업시간</h2>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                                AI가 콘텐츠와 리뷰 답글에 참고하는 최신 운영
-                                시간입니다.
+                            <h2 className="text-heading font-semibold text-ink">영업시간</h2>
+                            <p className="mt-0.5 text-caption text-muted">
+                                AI가 콘텐츠와 리뷰 답글에 참고하는 최신 운영 시간입니다.
                             </p>
                         </div>
                     </div>
-                    <div className="mt-3 divide-y divide-[#eeeae2]">
+
+                    <div className="mt-4 divide-y divide-border-subtle">
                         {businessHours.map((hour) => (
                             <div key={hour.dayOfWeek} className="flex items-center gap-3 py-3">
-                                <span className="w-14 text-xs font-bold text-[#172033]">
+                                <span className="w-14 text-body font-semibold text-ink">
                                     {dayLabels[hour.dayOfWeek] ?? hour.dayOfWeek}
                                 </span>
                                 <input
                                     value={hour.openTime}
-                                    onChange={(event) =>
-                                        setBusinessHours((current) =>
-                                            current.map((item) =>
-                                                item.dayOfWeek === hour.dayOfWeek
-                                                    ? { ...item, openTime: event.target.value }
-                                                    : item
-                                            )
+                                    onChange={(e) =>
+                                        setBusinessHours((cur) =>
+                                            cur.map((h) =>
+                                                h.dayOfWeek === hour.dayOfWeek
+                                                    ? { ...h, openTime: e.target.value }
+                                                    : h,
+                                            ),
                                         )
                                     }
-                                    className="w-20 rounded-lg border border-[#ded9cf] px-2 py-1.5 text-xs outline-none focus:border-[#3dd7af]"
+                                    className="w-20 rounded-lg border border-border px-2 py-1.5 text-body outline-none transition-colors focus:border-accent"
                                     aria-label={`${dayLabels[hour.dayOfWeek] ?? hour.dayOfWeek} 시작 시간`}
                                 />
-                                <span className="text-slate-400">–</span>
+                                <span className="text-muted">–</span>
                                 <input
                                     value={hour.closeTime}
-                                    onChange={(event) =>
-                                        setBusinessHours((current) =>
-                                            current.map((item) =>
-                                                item.dayOfWeek === hour.dayOfWeek
-                                                    ? { ...item, closeTime: event.target.value }
-                                                    : item
-                                            )
+                                    onChange={(e) =>
+                                        setBusinessHours((cur) =>
+                                            cur.map((h) =>
+                                                h.dayOfWeek === hour.dayOfWeek
+                                                    ? { ...h, closeTime: e.target.value }
+                                                    : h,
+                                            ),
                                         )
                                     }
-                                    className="w-20 rounded-lg border border-[#ded9cf] px-2 py-1.5 text-xs outline-none focus:border-[#3dd7af]"
+                                    className="w-20 rounded-lg border border-border px-2 py-1.5 text-body outline-none transition-colors focus:border-accent"
                                     aria-label={`${dayLabels[hour.dayOfWeek] ?? hour.dayOfWeek} 종료 시간`}
                                 />
-                                <span className="ml-auto text-[11px] font-semibold text-[#168165]">
+                                <span className="ml-auto text-caption font-semibold text-success">
                                     {hour.open ? "영업" : "휴무"}
                                 </span>
                             </div>
@@ -342,18 +318,13 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                     </div>
                 </section>
 
-                <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h2 className="text-base font-bold">
-                                대표 메뉴 · 서비스
-                            </h2>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                                게시물 초안에 자연스럽게 활용할 수 있는
-                                항목입니다.
-                            </p>
-                        </div>
-                    </div>
+                {/* Menu & services */}
+                <section className="rounded-[20px] border border-border bg-surface p-5">
+                    <h2 className="text-heading font-semibold text-ink">대표 메뉴 · 서비스</h2>
+                    <p className="mt-0.5 text-caption text-muted">
+                        게시물 초안에 자연스럽게 활용할 수 있는 항목입니다.
+                    </p>
+
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                         <label className="sr-only" htmlFor="new-menu">
                             대표 메뉴 또는 서비스 추가
@@ -361,45 +332,47 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                         <input
                             id="new-menu"
                             value={newMenu}
-                            onChange={(event) => setNewMenu(event.target.value)}
-                            onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                    event.preventDefault()
+                            onChange={(e) => setNewMenu(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault()
                                     handleAddMenu()
                                 }
                             }}
-                            className="min-w-0 flex-1 rounded-xl border border-[#ded9cf] px-3 py-2.5 text-sm outline-none focus:border-[#3dd7af]"
+                            className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2 text-body outline-none transition-colors focus:border-accent"
                             placeholder="대표 메뉴 또는 서비스를 추가하세요"
                         />
-                        <button
-                            type="button"
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={<PlusIcon size={14} />}
+                            loading={addMenuMutation.loading}
                             onClick={handleAddMenu}
-                            disabled={addMenuMutation.loading}
-                            className="flex items-center justify-center gap-1.5 rounded-xl border border-[#ded9cf] px-3 py-2.5 text-xs font-bold text-[#29425b] hover:bg-[#f7f5f0] disabled:opacity-60"
                         >
-                            <PlusIcon size={15} />{" "}
                             {addMenuMutation.loading ? "추가 중…" : "메뉴 추가"}
-                        </button>
+                        </Button>
                     </div>
+
                     {addMenuMutation.error && (
-                        <p className="mt-2 text-sm font-medium text-[#d6503b]">
+                        <p className="mt-2 text-body font-medium text-error">
                             {addMenuMutation.error}
                         </p>
                     )}
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
                         {menuItems.map((item) => (
                             <div
                                 key={item.id}
-                                className="flex items-center justify-between rounded-xl bg-[#f7f5f0] px-4 py-3"
+                                className="flex items-center justify-between rounded-lg bg-canvas px-4 py-3"
                             >
-                                <span className="text-xs font-bold text-[#172033]">
-                                    {item.name}
-                                </span>
+                                <span className="text-body font-semibold text-ink">{item.name}</span>
                                 <button
                                     type="button"
-                                    onClick={() => deleteMenuMutation.run({ storeId: store.id, menuId: item.id })}
+                                    onClick={() =>
+                                        deleteMenuMutation.run({ storeId: store.id, menuId: item.id })
+                                    }
                                     disabled={deleteMenuMutation.loading}
-                                    className="rounded-lg p-1 text-slate-400 hover:bg-[#ebe7df] hover:text-[#d6503b]"
+                                    className="rounded-lg p-1 text-muted transition-colors hover:bg-border hover:text-error"
                                     aria-label={`${item.name} 삭제`}
                                 >
                                     <Trash2Icon size={14} />
@@ -412,6 +385,7 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
         </>
     )
 }
+
 function Field({
     label,
     defaultValue,
@@ -423,23 +397,19 @@ function Field({
     name: string
     textarea?: boolean
 }) {
-    const className =
-        "mt-1.5 w-full rounded-xl border border-[#ded9cf] bg-white px-3 py-2.5 text-sm text-[#172033] outline-none focus:border-[#3dd7af]"
+    const inputClass =
+        "mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-body text-ink outline-none transition-colors focus:border-accent"
     return (
-        <label className="block text-xs font-bold text-[#42526e]">
+        <label className="block text-caption font-semibold text-secondary">
             {label}
             {textarea ? (
                 <textarea
-                    className={`${className} min-h-[96px] resize-y leading-6`}
+                    className={`${inputClass} min-h-[96px] resize-y leading-relaxed`}
                     defaultValue={defaultValue}
                     name={name}
                 />
             ) : (
-                <input
-                    className={className}
-                    defaultValue={defaultValue}
-                    name={name}
-                />
+                <input className={inputClass} defaultValue={defaultValue} name={name} />
             )}
         </label>
     )

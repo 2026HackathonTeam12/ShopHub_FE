@@ -30,26 +30,26 @@ type SidebarProps = {
 export function Sidebar({ activePath, onNavigate }: SidebarProps) {
     const user = useUser()
     return (
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-[#101a30] px-4 py-5 lg:flex">
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-panel px-4 py-5 lg:flex">
             <button
                 type="button"
                 onClick={() => onNavigate("/dashboard")}
                 className="flex items-center gap-2.5 px-2 text-left"
                 aria-label="대시보드로 이동"
             >
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#3dd7af] text-[#101a30]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white">
                     <StoreIcon size={19} strokeWidth={2.5} aria-hidden="true" />
                 </span>
                 <span>
                     <span className="block text-lg font-extrabold tracking-tight text-white">ShopHub</span>
-                    <span className="font-mono-label block text-[9px] uppercase tracking-[0.16em] text-slate-500">
+                    <span className="font-mono-label block text-[9px] uppercase tracking-[0.16em] text-white/30">
                         business operations
                     </span>
                 </span>
             </button>
 
             <nav className="mt-10 space-y-1" aria-label="주요 메뉴">
-                <p className="font-mono-label mb-2 px-3 text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                <p className="font-mono-label mb-2 px-3 text-[10px] uppercase tracking-[0.14em] text-white/30">
                     Workspace
                 </p>
                 {navigationItems.map((item) => (
@@ -69,9 +69,9 @@ export function Sidebar({ activePath, onNavigate }: SidebarProps) {
                     </span>
                     <span className="min-w-0 flex-1">
                         <span className="block truncate text-xs font-semibold text-white">{user?.name ?? ""}</span>
-                        <span className="block truncate text-[11px] text-slate-500">내 계정 관리</span>
+                        <span className="block truncate text-[11px] text-white/40">내 계정 관리</span>
                     </span>
-                    <UserRoundIcon size={16} className="text-slate-400" aria-hidden="true" />
+                    <UserRoundIcon size={16} className="text-white/30" aria-hidden="true" />
                 </button>
             </div>
         </aside>
@@ -90,12 +90,12 @@ function NavigationButton({ item, activePath, onNavigate }: NavigationButtonProp
             type="button"
             onClick={() => onNavigate(item.path)}
             aria-current={active ? "page" : undefined}
-            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${active ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5 hover:text-slate-100"}`}
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${active ? "bg-white/10 text-white" : "text-white/50 hover:bg-white/5 hover:text-white/80"}`}
         >
             <Icon size={18} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
             <span className="flex-1">{item.label}</span>
             {typeof item.badge === "number" && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff8067] px-1 text-[10px] font-bold text-[#172033]">
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-white">
                     {item.badge > 9 ? "9+" : item.badge}
                 </span>
             )}

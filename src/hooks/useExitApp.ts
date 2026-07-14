@@ -1,6 +1,6 @@
 import { useCallback } from "react"
 import { useNavigate } from "react-router-dom"
-import { useSetStores, useSetSelectedStoreId, useSetUser } from "../store"
+import { useSetStores, useSetSelectedStoreId, useSetUser, clearPersistedSelectedStoreId } from "../store"
 import { clearAccessToken } from "../api"
 
 export function useExitApp() {
@@ -11,6 +11,7 @@ export function useExitApp() {
 
     return useCallback(() => {
         clearAccessToken()
+        clearPersistedSelectedStoreId()
         setUser(null)
         setStores([])
         setSelectedStoreId("")

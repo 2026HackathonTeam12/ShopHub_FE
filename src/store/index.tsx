@@ -12,6 +12,8 @@ export {
     useSelectedStoreId,
     useSetSelectedStoreId,
     useSelectedStoreIdState,
+    pickSelectedStoreId,
+    clearPersistedSelectedStoreId,
 } from "./StoreContext"
 export { useReviews, useSetReviews, useReviewsState, type Review } from "./ReviewContext"
 export { usePosts, useSetPosts, usePostsState, type Post } from "./ContentContext"

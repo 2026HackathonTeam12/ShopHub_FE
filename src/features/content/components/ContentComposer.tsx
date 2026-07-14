@@ -40,24 +40,24 @@ export function ContentComposer() {
     })
     return (
         <section
-            className="overflow-hidden rounded-2xl border border-[#ded9cf] bg-white shadow-[0_8px_24px_rgba(23,32,51,0.05)]"
+            className="overflow-hidden rounded-[20px] border border-border bg-surface"
             aria-labelledby="composer-heading"
         >
-            <div className="flex items-center justify-between border-b border-[#eeeae2] px-5 py-4">
+            <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
                 <div>
                     <div className="flex items-center gap-2">
-                        <h2 id="composer-heading" className="text-base font-bold text-[#172033]">
+                        <h2 id="composer-heading" className="text-heading font-bold text-ink">
                             새 콘텐츠
                         </h2>
-                        <span className="rounded-md bg-[#e5f8f1] px-1.5 py-0.5 text-[10px] font-bold text-[#168165]">
+                        <span className="rounded-md bg-success-bg px-1.5 py-0.5 text-[10px] font-bold text-success">
                             AI 준비됨
                         </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-500">한 번 작성하고, 채널마다 알맞게 전하세요.</p>
+                    <p className="mt-0.5 text-caption text-muted">한 번 작성하고, 채널마다 알맞게 전하세요.</p>
                 </div>
                 <button
                     type="button"
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-[#f5f2eb] hover:text-[#172033]"
+                    className="rounded-xl p-1.5 text-muted transition-colors hover:bg-canvas hover:text-ink"
                     aria-label="작성 옵션 열기"
                 >
                     <ChevronDownIcon size={18} aria-hidden="true" />
@@ -70,7 +70,7 @@ export function ContentComposer() {
                 <input
                     ref={titleRef}
                     id="post-title"
-                    className="w-full border-0 p-0 text-base font-bold text-[#172033] placeholder:text-slate-400 focus:outline-none"
+                    className="w-full border-0 p-0 text-heading font-bold text-ink placeholder:text-muted focus:outline-none"
                     placeholder="게시물 제목을 입력하세요"
                     defaultValue="오늘의 비 오는 날 메뉴"
                 />
@@ -81,10 +81,10 @@ export function ContentComposer() {
                     id="post-body"
                     value={body}
                     onChange={(event) => setBody(event.target.value)}
-                    className="mt-3 min-h-[106px] w-full resize-none border-0 p-0 text-sm leading-6 text-slate-600 placeholder:text-slate-400 focus:outline-none"
+                    className="mt-3 min-h-[106px] w-full resize-none border-0 p-0 text-body leading-6 text-secondary placeholder:text-muted focus:outline-none"
                     placeholder="고객에게 전할 이야기를 작성해 주세요."
                 />
-                <div className="mt-3 flex items-center justify-between border-t border-[#eeeae2] pt-3">
+                <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-3">
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -106,7 +106,7 @@ export function ContentComposer() {
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={!selectedStoreId || uploadImagesMutation.loading}
-                        className={`flex items-center gap-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${imageUrls.length > 0 ? "text-[#168165]" : "text-slate-500 hover:text-[#172033]"}`}
+                        className={`flex items-center gap-1.5 text-caption font-semibold transition-colors disabled:opacity-60 ${imageUrls.length > 0 ? "text-success" : "text-muted hover:text-ink"}`}
                     >
                         {imageUrls.length > 0 ? <CheckIcon size={16} aria-hidden="true" /> : <ImagePlusIcon size={16} aria-hidden="true" />}
                         {uploadImagesMutation.loading
@@ -115,13 +115,13 @@ export function ContentComposer() {
                               ? `사진 ${imageUrls.length}장 추가됨`
                               : "사진 추가"}
                     </button>
-                    <span className="font-mono-label text-[10px] text-slate-400">{body.length} / 2,200</span>
+                    <span className="font-mono-label text-[10px] text-muted">{body.length} / 2,200</span>
                 </div>
                 {uploadImagesMutation.error && (
-                    <p className="mt-2 text-[11px] font-medium text-[#d6503b]">{uploadImagesMutation.error}</p>
+                    <p className="mt-2 text-caption font-medium text-error">{uploadImagesMutation.error}</p>
                 )}
-                <div className="mt-4 rounded-xl bg-[#f7f5f0] p-3.5">
-                    <p className="text-xs font-bold text-[#172033]">게시할 채널</p>
+                <div className="mt-4 rounded-xl bg-canvas p-3.5">
+                    <p className="text-caption font-bold text-ink">게시할 채널</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                         {targets.map((target) => {
                             const Icon = target.icon
@@ -132,22 +132,22 @@ export function ContentComposer() {
                                     type="button"
                                     onClick={() => toggleTarget(target.id)}
                                     aria-pressed={selected}
-                                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] font-semibold transition-colors ${selected ? "border-[#20365b] bg-white text-[#172033]" : "border-transparent bg-[#ede9e1] text-slate-400"}`}
+                                    className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-caption font-semibold transition-colors ${selected ? "border-accent bg-surface text-ink" : "border-transparent bg-border-subtle text-muted"}`}
                                 >
                                     <span
                                         className={`flex h-4 w-4 items-center justify-center rounded-sm ${target.color}`}
                                     >
-                                        <Icon size={10} className="text-[#172033]" aria-hidden="true" />
+                                        <Icon size={10} className="text-ink" aria-hidden="true" />
                                     </span>
                                     {PLATFORM_META[target.id].name}
-                                    {selected && <CheckIcon size={12} className="text-[#168165]" aria-hidden="true" />}
+                                    {selected && <CheckIcon size={12} className="text-success" aria-hidden="true" />}
                                 </button>
                             )
                         })}
                     </div>
                 </div>
                 {publishMutation.error && (
-                    <p className="mt-4 text-[11px] font-medium text-[#d6503b]">{publishMutation.error}</p>
+                    <p className="mt-4 text-caption font-medium text-error">{publishMutation.error}</p>
                 )}
                 <div className="mt-4 flex items-center gap-2">
                     <button
@@ -167,7 +167,7 @@ export function ContentComposer() {
                             }
                         }}
                         disabled={!selectedStoreId || selectedTargets.length === 0 || publishMutation.loading}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#172b4d] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#223b66] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-body font-bold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         {published ? (
                             <CheckIcon size={17} aria-hidden="true" />

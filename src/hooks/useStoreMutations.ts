@@ -13,7 +13,7 @@ import {
     type AddMenuRequest,
     type DeleteMenuRequest,
 } from "../api"
-import { useSetStores, useSetSelectedStoreId } from "../store"
+import { useSetStores, useSetSelectedStoreId, pickSelectedStoreId } from "../store"
 import type { StoreProfile } from "../data/store"
 
 type CreateStoreForm = {
@@ -29,12 +29,14 @@ type CreateStoreForm = {
 export const useFetchStoresMutation = createMutationHook<void, StoreProfile[]>()
     .state(() => {
         const setStores = useSetStores()
-        return { setStores }
+        const setSelectedStoreId = useSetSelectedStoreId()
+        return { setStores, setSelectedStoreId }
     })
     .request(() => undefined)
     .api(() => fetchStores())
-    .update((stores, { setStores }) => {
+    .update((stores, { setStores, setSelectedStoreId }) => {
         setStores(stores)
+        setSelectedStoreId((current) => pickSelectedStoreId(stores, current))
     })
     .build()
 

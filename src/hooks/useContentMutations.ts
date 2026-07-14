@@ -23,6 +23,7 @@ function toPost(item: ContentItem): Post {
     return {
         id: item.id,
         title: item.title,
+        body: item.body,
         channels: item.channels.join(" · "),
         date: getRelativeTime(item.updatedAt),
         status: statusMap[item.status] ?? item.status,

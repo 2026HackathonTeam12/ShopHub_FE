@@ -150,12 +150,6 @@ export function ContentComposer() {
                         )}
                         {published ? "게시 요청을 보냈어요" : publishMutation.loading ? "게시 중…" : "지금 게시하기"}
                     </button>
-                    <button
-                        type="button"
-                        className="rounded-xl border border-[#d9d5cd] px-3 py-3 text-xs font-bold text-[#42526e] transition-colors hover:bg-[#f7f5f0]"
-                    >
-                        예약
-                    </button>
                 </div>
             </div>
         </section>

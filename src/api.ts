@@ -191,6 +191,17 @@ export async function addStoreMenu(req: AddMenuRequest): Promise<StoreProfile> {
     })
 }
 
+export interface DeleteMenuRequest {
+    storeId: string
+    menuId: string
+}
+
+export async function deleteStoreMenu(req: DeleteMenuRequest): Promise<StoreProfile> {
+    return request<StoreProfile>(`/v1/stores/${req.storeId}/profile/menus/${req.menuId}`, {
+        method: "DELETE",
+    })
+}
+
 // ── Content ───────────────────────────────────────────────────────────────────
 
 export interface GenerateContentRequest {
@@ -201,13 +212,14 @@ export interface GenerateContentRequest {
 export interface ContentSuggestion {
     title: string
     body: string
+    source: string
 }
 
 export async function generateContentDraft(req: GenerateContentRequest): Promise<ContentSuggestion> {
     const { storeId, ...body } = req
-    return request<ContentSuggestion>(`/v1/stores/${storeId}/contents`, {
+    return request<ContentSuggestion>(`/v1/stores/${storeId}/contents/suggest`, {
         method: "POST",
-        body: JSON.stringify({ ...body, aiSuggest: true }),
+        body: JSON.stringify(body),
     })
 }
 
@@ -232,7 +244,7 @@ export async function publishContent(req: PublishContentRequest): Promise<Conten
     const { storeId, ...body } = req
     return request<ContentItem>(`/v1/stores/${storeId}/contents`, {
         method: "POST",
-        body: JSON.stringify({ ...body, aiSuggest: false }),
+        body: JSON.stringify(body),
     })
 }
 

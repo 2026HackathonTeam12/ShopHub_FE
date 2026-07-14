@@ -8,6 +8,7 @@ import {
     BookTextIcon,
     UsersIcon,
     MapPinIcon,
+    Trash2Icon,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
@@ -15,7 +16,7 @@ import type { BusinessHour, StoreProfile } from "../../../data/store"
 import type { PlatformId } from "../../../data/platforms"
 import { PLATFORM_META } from "../../../data/platforms"
 import { useIntegrations } from "../../../store"
-import { useAddMenuMutation, useUpdateBasicMutation, useUpdateHoursMutation } from "../../../hooks/useStoreMutations"
+import { useAddMenuMutation, useDeleteMenuMutation, useUpdateBasicMutation, useUpdateHoursMutation } from "../../../hooks/useStoreMutations"
 import { startOAuth } from "../../../api"
 
 const PLATFORM_ICONS: Partial<Record<PlatformId, LucideIcon>> = {
@@ -41,12 +42,13 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const integrations = useIntegrations()
     const [saved, setSaved] = useState(false)
     const [businessHours, setBusinessHours] = useState<BusinessHour[]>(store.businessHours)
-    const menus = store.menuItems.map((i) => i.name)
+    const menuItems = store.menuItems
     const [newMenu, setNewMenu] = useState("")
     const basicFormRef = useRef<HTMLFormElement>(null)
     const updateBasicMutation = useUpdateBasicMutation()
     const updateHoursMutation = useUpdateHoursMutation()
     const addMenuMutation = useAddMenuMutation()
+    const deleteMenuMutation = useDeleteMenuMutation()
     const [oauthLoading, setOauthLoading] = useState(false)
     const saving = updateBasicMutation.loading || updateHoursMutation.loading
 
@@ -356,17 +358,23 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                         </p>
                     )}
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {menus.map((menu) => (
+                        {menuItems.map((item) => (
                             <div
-                                key={menu}
+                                key={item.id}
                                 className="flex items-center justify-between rounded-xl bg-[#f7f5f0] px-4 py-3"
                             >
                                 <span className="text-xs font-bold text-[#172033]">
-                                    {menu}
+                                    {item.name}
                                 </span>
-                                <span className="text-[11px] font-semibold text-[#168165]">
-                                    AI 활용
-                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => deleteMenuMutation.run({ storeId: store.id, menuId: item.id })}
+                                    disabled={deleteMenuMutation.loading}
+                                    className="rounded-lg p-1 text-slate-400 hover:bg-[#ebe7df] hover:text-[#d6503b]"
+                                    aria-label={`${item.name} 삭제`}
+                                >
+                                    <Trash2Icon size={14} />
+                                </button>
                             </div>
                         ))}
                     </div>

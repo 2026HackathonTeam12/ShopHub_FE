@@ -6,10 +6,12 @@ import {
     updateStoreBasic,
     updateStoreHours,
     addStoreMenu,
+    deleteStoreMenu,
     type CreateStoreRequest,
     type UpdateBasicRequest,
     type UpdateHoursRequest,
     type AddMenuRequest,
+    type DeleteMenuRequest,
 } from "../api"
 import { useSetStores, useSetSelectedStoreId } from "../store"
 import type { StoreProfile } from "../data/store"
@@ -67,6 +69,18 @@ export const useAddMenuMutation = createMutationHook<AddMenuRequest, StoreProfil
     })
     .request((req) => req)
     .api(addStoreMenu)
+    .update((store, { setStores }) => {
+        setStores((current) => current.map((s) => (s.id === store.id ? store : s)))
+    })
+    .build()
+
+export const useDeleteMenuMutation = createMutationHook<DeleteMenuRequest, StoreProfile>()
+    .state(() => {
+        const setStores = useSetStores()
+        return { setStores }
+    })
+    .request((req) => req)
+    .api(deleteStoreMenu)
     .update((store, { setStores }) => {
         setStores((current) => current.map((s) => (s.id === store.id ? store : s)))
     })

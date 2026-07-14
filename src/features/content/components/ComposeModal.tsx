@@ -1,7 +1,6 @@
 import { useEffect, useState, useId } from "react"
 import { useGenerateContentDraftMutation, usePublishContentMutation } from "../../../hooks/useContentMutations"
 import {
-    CalendarClockIcon,
     CheckIcon,
     ImagePlusIcon,
     Focus,
@@ -45,7 +44,6 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
     const [title, setTitle] = useState("")
     const [body, setBody] = useState("")
     const [selectedChannels, setSelectedChannels] = useState<PlatformId[]>([])
-    const [schedule, setSchedule] = useState("지금 게시")
     const [imageAdded, setImageAdded] = useState(false)
     const [published, setPublished] = useState(false)
     const generateDraftMutation = useGenerateContentDraftMutation()
@@ -72,7 +70,6 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
             setTitle("")
             setBody("")
             setImageAdded(false)
-            setSchedule("지금 게시")
         }
     }, [open])
 
@@ -207,19 +204,6 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                 {imageAdded ? <CheckIcon size={15} /> : <ImagePlusIcon size={15} />}
                                 {imageAdded ? "사진 1장 추가됨" : "사진 추가"}
                             </button>
-                            <label className="flex items-center gap-1.5 rounded-lg border border-[#ded9cf] px-3 py-2 text-xs font-bold text-[#42526e]">
-                                <CalendarClockIcon size={15} />
-                                <span className="sr-only">게시 시간</span>
-                                <select
-                                    value={schedule}
-                                    onChange={(event) => setSchedule(event.target.value)}
-                                    className="bg-transparent outline-none"
-                                >
-                                    <option>지금 게시</option>
-                                    <option>오늘 18:00 예약</option>
-                                    <option>내일 10:00 예약</option>
-                                </select>
-                            </label>
                         </div>
 
                         <fieldset className="mt-5 rounded-xl bg-[#f7f5f0] p-4">
@@ -271,7 +255,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                                 className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66] disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 <SendIcon size={15} />
-                                {publishMutation.loading ? "게시 중…" : schedule === "지금 게시" ? "게시하기" : "예약하기"}
+                                {publishMutation.loading ? "게시 중…" : "게시하기"}
                             </button>
                         </div>
                     </footer>

@@ -1,10 +1,15 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLocation, useNavigate } from "react-router-dom"
 import { CheckIcon, ChevronDownIcon, MenuIcon, PlusIcon, StoreIcon, UserRoundIcon, XIcon } from "lucide-react"
 import { ComposeModal } from "../../features/content/components/ComposeModal"
 import { navigationItems, Sidebar } from "./Sidebar"
 import type { StoreProfile } from "../../data/store"
+import { getAccent, getInitials } from "../../utils/storeUtils"
+import { useFetchStoresMutation } from "../../hooks/useStoreMutations"
+import { useFetchReviewsMutation } from "../../hooks/useReviewMutations"
+import { useFetchContentsMutation } from "../../hooks/useContentMutations"
+import { useUser } from "../../store"
 import { MyPage } from "../../features/account/pages/Mypage"
 import { ContentCenterPage } from "../../features/content/pages/ContentCenterPage"
 import { DashboardPage } from "../../features/dashboard/pages/DashboardPage"
@@ -31,6 +36,21 @@ export function WorkspaceShell({ stores, selectedStoreId, onSelectStore, onAddSt
     const [mobileOpen, setMobileOpen] = useState(false)
     const [composerOpen, setComposerOpen] = useState(false)
     const [storeMenuOpen, setStoreMenuOpen] = useState(false)
+    const user = useUser()
+    const syncStores = useFetchStoresMutation()
+    const fetchReviews = useFetchReviewsMutation()
+    const fetchContents = useFetchContentsMutation()
+
+    useEffect(() => {
+      syncStores.run()
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (!selectedStoreId) return
+        fetchReviews.run(selectedStoreId)
+        fetchContents.run(selectedStoreId)
+    }, [selectedStoreId]) // eslint-disable-line react-hooks/exhaustive-deps
+
     const activePath = viewLabels[location.pathname] ? location.pathname : "/dashboard"
     // const activeItem = viewLabels[activePath]
     const selectedStore = stores.find((store) => store.id === selectedStoreId) ?? stores[0]
@@ -65,10 +85,11 @@ export function WorkspaceShell({ stores, selectedStoreId, onSelectStore, onAddSt
         )
     }
     const composeStore = {
+        id: selectedStore.id,
         name: selectedStore.name,
-        neighborhood: selectedStore.neighborhood,
-        menu: selectedStore.menu.join(" · "),
-        tone: selectedStore.tone,
+        address: selectedStore.address,
+        menu: selectedStore.menuItems.map((i) => i.name).join(" · "),
+        toneOfVoice: selectedStore.toneOfVoice,
     }
     const page =
         activePath === "/content" ? (
@@ -123,14 +144,14 @@ export function WorkspaceShell({ stores, selectedStoreId, onSelectStore, onAddSt
                                 aria-label="운영 가게 선택"
                             >
                                 <span
-                                    className={`flex h-7 w-7 items-center justify-center rounded-md ${selectedStore.accent} text-[10px] font-extrabold text-[#3b2c22]`}
+                                    className={`flex h-7 w-7 items-center justify-center rounded-md ${getAccent(selectedStore.id)} text-[10px] font-extrabold text-[#3b2c22]`}
                                 >
-                                    {selectedStore.initials}
+                                    {getInitials(selectedStore.name)}
                                 </span>
                                 <span className="hidden sm:block">
                                     <span className="block text-xs font-bold text-[#172033]">{selectedStore.name}</span>
                                     <span className="block text-[10px] text-slate-500">
-                                        {selectedStore.neighborhood}
+                                        {selectedStore.address}
                                     </span>
                                 </span>
                                 <ChevronDownIcon size={15} className="text-slate-400" />
@@ -167,16 +188,16 @@ export function WorkspaceShell({ stores, selectedStoreId, onSelectStore, onAddSt
                                                 className={`flex w-full items-center gap-3 rounded-lg p-2.5 text-left ${store.id === selectedStore.id ? "bg-[#f0faf6]" : "hover:bg-[#f7f5f0]"}`}
                                             >
                                                 <span
-                                                    className={`flex h-8 w-8 items-center justify-center rounded-md ${store.accent} text-[10px] font-extrabold text-[#3b2c22]`}
+                                                    className={`flex h-8 w-8 items-center justify-center rounded-md ${getAccent(store.id)} text-[10px] font-extrabold text-[#3b2c22]`}
                                                 >
-                                                    {store.initials}
+                                                    {getInitials(store.name)}
                                                 </span>
                                                 <span className="min-w-0 flex-1">
                                                     <span className="block text-xs font-bold text-[#172033]">
                                                         {store.name}
                                                     </span>
                                                     <span className="mt-0.5 block truncate text-[10px] text-slate-500">
-                                                        {store.neighborhood}
+                                                        {store.address}
                                                     </span>
                                                 </span>
                                                 {store.id === selectedStore.id && (
@@ -293,10 +314,10 @@ export function WorkspaceShell({ stores, selectedStoreId, onSelectStore, onAddSt
                                 className={`mt-auto flex items-center gap-3 rounded-xl p-3 text-left ${activePath === "/account" ? "bg-white/10" : "bg-white/5"}`}
                             >
                                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e7c8a0] text-xs font-extrabold text-[#392d24]">
-                                    JI
+                                    {getInitials(user?.name ?? "")}
                                 </span>
                                 <span className="flex-1">
-                                    <span className="block text-xs font-bold text-white">김지인</span>
+                                    <span className="block text-xs font-bold text-white">{user?.name ?? ""}</span>
                                     <span className="block text-[11px] text-slate-400">내 계정 관리</span>
                                 </span>
                                 <UserRoundIcon size={16} className="text-slate-400" />

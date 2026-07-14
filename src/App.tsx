@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
-import { AppProvider, useStores } from "./store"
+import { AppProvider, useStores, useSelectedStoreId, useSetSelectedStoreId } from "./store"
+import { useExitApp } from "./hooks/useExitApp"
 import { AuthPage } from "./features/auth/pages/AuthPage"
 import { StoreOnboarding } from "./features/store/pages/StoreOnboarding"
 import { WorkspaceShell } from "./components/layout/WorkspaceShell"
@@ -9,18 +10,17 @@ type AuthMode = "login" | "signup"
 
 function AppRoutes() {
     const navigate = useNavigate()
-    const { stores, selectedStoreId, setSelectedStoreId, addStore, clearStores, initializeStores } = useStores()
+    const stores = useStores()
+    const selectedStoreId = useSelectedStoreId()
+    const setSelectedStoreId = useSetSelectedStoreId()
+    const exitApp = useExitApp()
     const [initialStoreStep, setInitialStoreStep] = useState(1)
 
-    const handleAddStore = (newStore: Parameters<typeof addStore>[0]) => {
-        addStore(newStore)
-        navigate("/dashboard")
-    }
+    // auth → app (after login)
+    const enterApp = () => navigate("/dashboard")
 
-    const logout = () => {
-        clearStores()
-        navigate("/login")
-    }
+    // auth → app (after signup: go to onboarding)
+    const enterOnboarding = () => navigate("/stores/new")
 
     const hasStores = stores.length > 0
     const homeDestination = hasStores ? "/dashboard" : "/login"
@@ -33,7 +33,7 @@ function AppRoutes() {
             setInitialStoreStep(1)
             navigate("/stores/new")
         },
-        onLogout: logout,
+        onLogout: exitApp,
     }
 
     return (
@@ -44,16 +44,8 @@ function AppRoutes() {
                 element={
                     <AuthPage
                         initialMode="login"
-                        onLogin={() => {
-                            if (stores.length === 0) {
-                                initializeStores()
-                            }
-                            navigate("/dashboard")
-                        }}
-                        onSignup={() => {
-                            clearStores()
-                            navigate("/stores/new")
-                        }}
+                        onLogin={enterApp}
+                        onSignup={enterOnboarding}
                         onModeChange={(mode) => navigate(mode === "signup" ? "/signup" : "/login")}
                     />
                 }
@@ -63,11 +55,8 @@ function AppRoutes() {
                 element={
                     <AuthPage
                         initialMode="signup"
-                        onLogin={() => navigate("/dashboard")}
-                        onSignup={() => {
-                            clearStores()
-                            navigate("/stores/new")
-                        }}
+                        onLogin={enterApp}
+                        onSignup={enterOnboarding}
                         onModeChange={(mode: AuthMode) => navigate(mode === "signup" ? "/signup" : "/login")}
                     />
                 }
@@ -77,7 +66,7 @@ function AppRoutes() {
                 element={
                     <StoreOnboarding
                         initialStep={initialStoreStep}
-                        onComplete={handleAddStore}
+                        onComplete={enterApp}
                         onCancel={stores.length > 0 ? () => navigate("/dashboard") : undefined}
                     />
                 }

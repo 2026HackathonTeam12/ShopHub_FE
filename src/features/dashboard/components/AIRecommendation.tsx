@@ -1,10 +1,27 @@
+import { useEffect, useState } from "react"
 import { CloudRain, Lightbulb, Sparkles } from "lucide-react"
+import { useSelectedStoreId } from "../../../store"
+import { fetchDashboard, UnauthorizedError, type DashboardSuggestionCard } from "../../../api"
+import { useExitApp } from "../../../hooks/useExitApp"
 
 type AIRecommendationProps = {
     onCompose: () => void
 }
 
 export function AIRecommendation({ onCompose }: AIRecommendationProps) {
+    const storeId = useSelectedStoreId()
+    const exitApp = useExitApp()
+    const [card, setCard] = useState<DashboardSuggestionCard | null>(null)
+
+    useEffect(() => {
+        if (!storeId) return
+        fetchDashboard(storeId)
+            .then((data) => setCard(data.suggestionCard))
+            .catch((err) => {
+                if (err instanceof UnauthorizedError) exitApp()
+            })
+    }, [storeId, exitApp])
+
     return (
         <section
             className="overflow-hidden h-full rounded-2xl flex flex-col justify-between bg-[#172b4d] p-5 text-white shadow-[0_10px_26px_rgba(23,43,77,0.2)]"
@@ -27,13 +44,10 @@ export function AIRecommendation({ onCompose }: AIRecommendationProps) {
                 <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.06] p-3.5">
                     <div className="flex items-center gap-2 text-[11px] text-[#c5d3eb]">
                         <CloudRain size={14} className="text-[#8fd9c4]" />
-                        연남동 · 비 · 18°C
+                        {card?.title ?? "—"}
                     </div>
                     <p className="mt-2 text-sm font-bold leading-6 text-white">
-                        "비 오는 오후, 따뜻한 한 잔"을 지금 올려보세요.
-                    </p>
-                    <p className="mt-1.5 text-[11px] leading-5 text-[#c5d3eb]">
-                        따뜻한 음료 게시물은 이 날씨에 저장률이 더 높았어요.
+                        {card?.message ?? ""}
                     </p>
                 </div>
             </div>
@@ -43,7 +57,7 @@ export function AIRecommendation({ onCompose }: AIRecommendationProps) {
                 onClick={onCompose}
                 className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#3dd7af] px-3 py-2.5 text-xs font-bold text-[#10213b] transition-colors hover:bg-[#72e6c5]"
             >
-                <Lightbulb size={14} />이 주제로 콘텐츠 만들기
+                <Lightbulb size={14} />{card?.actionLabel ?? "이 주제로 콘텐츠 만들기"}
             </button>
         </section>
     )

@@ -1,17 +1,76 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { CheckIcon, Clock3Icon, PlusIcon, StoreIcon } from "lucide-react"
 import { PageHeader } from "../../../components/common/PageHeader"
-import { useStoreSettings } from "../../../store"
 import type { StoreProfile } from "../../../data/store"
+import { useAddMenuMutation, useUpdateBasicMutation, useUpdateHoursMutation } from "../../../hooks/useStoreMutations"
+
+const defaultHours = [
+    ["월요일", "10:00", "21:00"],
+    ["화요일", "10:00", "21:00"],
+    ["수요일", "10:00", "21:00"],
+    ["목요일", "10:00", "21:00"],
+    ["금요일", "10:00", "22:00"],
+    ["토요일", "11:00", "22:00"],
+    ["일요일", "11:00", "20:00"],
+]
+
+const dayMap: Record<string, string> = {
+    월요일: "MON",
+    화요일: "TUE",
+    수요일: "WED",
+    목요일: "THU",
+    금요일: "FRI",
+    토요일: "SAT",
+    일요일: "SUN",
+}
 
 export function StoreProfilePage({ store }: { store: StoreProfile }) {
     const [saved, setSaved] = useState(false)
-    const { hours, menus, updateHours, addMenu } = useStoreSettings()
+    const [hours, setHours] = useState(defaultHours)
+    const menus = store.menuItems.map((i) => i.name)
     const [newMenu, setNewMenu] = useState("")
+    const basicFormRef = useRef<HTMLFormElement>(null)
+    const updateBasicMutation = useUpdateBasicMutation()
+    const updateHoursMutation = useUpdateHoursMutation()
+    const addMenuMutation = useAddMenuMutation()
+    const saving = updateBasicMutation.loading || updateHoursMutation.loading
 
-    const handleAddMenu = () => {
-        addMenu(newMenu)
-        setNewMenu("")
+    const handleSave = async () => {
+        if (!basicFormRef.current) return
+        const els = basicFormRef.current.elements
+        const [basicOk, hoursOk] = await Promise.all([
+            updateBasicMutation.run({
+                storeId: store.id,
+                name: (els.namedItem("name") as HTMLInputElement).value,
+                phone: (els.namedItem("phone") as HTMLInputElement).value,
+                introduction: (els.namedItem("introduction") as HTMLTextAreaElement).value,
+                address: (els.namedItem("address") as HTMLInputElement).value,
+                category: (els.namedItem("category") as HTMLInputElement).value,
+                toneOfVoice: (els.namedItem("toneOfVoice") as HTMLInputElement).value,
+            }),
+            updateHoursMutation.run({
+                storeId: store.id,
+                businessHours: hours.map(([day, openTime, closeTime]) => ({
+                    dayOfWeek: dayMap[day] ?? day,
+                    openTime,
+                    closeTime,
+                    open: true,
+                })),
+            }),
+        ])
+        if (basicOk && hoursOk) {
+            setSaved(true)
+            window.setTimeout(() => setSaved(false), 2800)
+        }
+    }
+
+    const handleAddMenu = async () => {
+        const trimmed = newMenu.trim()
+        if (!trimmed) return
+        const ok = await addMenuMutation.run({ storeId: store.id, name: trimmed, description: "" })
+        if (ok) {
+            setNewMenu("")
+        }
     }
 
     return (
@@ -23,13 +82,11 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                 action={
                     <button
                         type="button"
-                        onClick={() => {
-                            setSaved(true)
-                            window.setTimeout(() => setSaved(false), 2800)
-                        }}
-                        className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66]"
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center gap-1.5 rounded-xl bg-[#172b4d] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#223b66] disabled:opacity-60"
                     >
-                        <CheckIcon size={16} /> 변경사항 저장
+                        <CheckIcon size={16} /> {saving ? "저장 중…" : "변경사항 저장"}
                     </button>
                 }
             />
@@ -41,6 +98,12 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                     가게 정보가 저장되었어요. 다음 AI 초안부터 반영됩니다.
                     <CheckIcon size={17} />
                 </div>
+            )}
+            {updateBasicMutation.error && (
+                <p className="mb-5 text-sm font-medium text-[#d6503b]">{updateBasicMutation.error}</p>
+            )}
+            {updateHoursMutation.error && (
+                <p className="mb-5 text-sm font-medium text-[#d6503b]">{updateHoursMutation.error}</p>
             )}
 
             <div className="mx-auto max-w-4xl space-y-6">
@@ -54,18 +117,20 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                             </p>
                         </div>
                     </div>
-                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                        <Field label="가게 이름" defaultValue={store.name} />
-                        <Field label="대표 전화" defaultValue={store.phone} />
-                        <div className="sm:col-span-2">
-                            <Field label="소개글" defaultValue={store.description} textarea />
+                    <form ref={basicFormRef} onSubmit={(e) => e.preventDefault()}>
+                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                            <Field label="가게 이름" defaultValue={store.name} name="name" />
+                            <Field label="대표 전화" defaultValue={store.phone} name="phone" />
+                            <div className="sm:col-span-2">
+                                <Field label="소개글" defaultValue={store.introduction} textarea name="introduction" />
+                            </div>
+                            <div className="sm:col-span-2">
+                                <Field label="주소" defaultValue={store.address} name="address" />
+                            </div>
+                            <Field label="업종" defaultValue={store.category} name="category" />
+                            <Field label="가게의 말투" defaultValue={store.toneOfVoice} name="toneOfVoice" />
                         </div>
-                        <div className="sm:col-span-2">
-                            <Field label="주소" defaultValue={store.address} />
-                        </div>
-                        <Field label="업종" defaultValue={store.category} />
-                        <Field label="가게의 말투" defaultValue={store.tone} />
-                    </div>
+                    </form>
                 </section>
 
                 <section className="rounded-2xl border border-[#ded9cf] bg-white p-5 shadow-sm">
@@ -79,7 +144,7 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                         </div>
                     </div>
                     <p className="mt-4 rounded-xl bg-[#f7f5f0] px-3 py-2 text-xs font-semibold text-[#42526e]">
-                        등록한 기본 시간: {store.hours}
+                        등록한 기본 시간: {store.businessHours.map((h) => `${h.dayOfWeek} ${h.openTime}-${h.closeTime}`).join(", ")}
                     </p>
                     <div className="mt-3 divide-y divide-[#eeeae2]">
                         {hours.map((row, index) => (
@@ -87,14 +152,26 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                                 <span className="w-14 text-xs font-bold text-[#172033]">{row[0]}</span>
                                 <input
                                     value={row[1]}
-                                    onChange={(event) => updateHours(index, 1, event.target.value)}
+                                    onChange={(event) =>
+                                        setHours((current) =>
+                                            current.map((r, i) =>
+                                                i === index ? r.map((cell, ci) => (ci === 1 ? event.target.value : cell)) : r
+                                            )
+                                        )
+                                    }
                                     className="w-20 rounded-lg border border-[#ded9cf] px-2 py-1.5 text-xs outline-none focus:border-[#3dd7af]"
                                     aria-label={`${row[0]} 시작 시간`}
                                 />
                                 <span className="text-slate-400">–</span>
                                 <input
                                     value={row[2]}
-                                    onChange={(event) => updateHours(index, 2, event.target.value)}
+                                    onChange={(event) =>
+                                        setHours((current) =>
+                                            current.map((r, i) =>
+                                                i === index ? r.map((cell, ci) => (ci === 2 ? event.target.value : cell)) : r
+                                            )
+                                        )
+                                    }
                                     className="w-20 rounded-lg border border-[#ded9cf] px-2 py-1.5 text-xs outline-none focus:border-[#3dd7af]"
                                     aria-label={`${row[0]} 종료 시간`}
                                 />
@@ -133,11 +210,15 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
                         <button
                             type="button"
                             onClick={handleAddMenu}
-                            className="flex items-center justify-center gap-1.5 rounded-xl border border-[#ded9cf] px-3 py-2.5 text-xs font-bold text-[#29425b] hover:bg-[#f7f5f0]"
+                            disabled={addMenuMutation.loading}
+                            className="flex items-center justify-center gap-1.5 rounded-xl border border-[#ded9cf] px-3 py-2.5 text-xs font-bold text-[#29425b] hover:bg-[#f7f5f0] disabled:opacity-60"
                         >
-                            <PlusIcon size={15} /> 메뉴 추가
+                            <PlusIcon size={15} /> {addMenuMutation.loading ? "추가 중…" : "메뉴 추가"}
                         </button>
                     </div>
+                    {addMenuMutation.error && (
+                        <p className="mt-2 text-sm font-medium text-[#d6503b]">{addMenuMutation.error}</p>
+                    )}
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {menus.map((menu) => (
                             <div
@@ -154,16 +235,16 @@ export function StoreProfilePage({ store }: { store: StoreProfile }) {
         </>
     )
 }
-function Field({ label, defaultValue, textarea = false }: { label: string; defaultValue: string; textarea?: boolean }) {
+function Field({ label, defaultValue, name, textarea = false }: { label: string; defaultValue: string; name: string; textarea?: boolean }) {
     const className =
         "mt-1.5 w-full rounded-xl border border-[#ded9cf] bg-white px-3 py-2.5 text-sm text-[#172033] outline-none focus:border-[#3dd7af]"
     return (
         <label className="block text-xs font-bold text-[#42526e]">
             {label}
             {textarea ? (
-                <textarea className={`${className} min-h-[96px] resize-y leading-6`} defaultValue={defaultValue} />
+                <textarea className={`${className} min-h-[96px] resize-y leading-6`} defaultValue={defaultValue} name={name} />
             ) : (
-                <input className={className} defaultValue={defaultValue} />
+                <input className={className} defaultValue={defaultValue} name={name} />
             )}
         </label>
     )

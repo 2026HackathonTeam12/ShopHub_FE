@@ -29,9 +29,9 @@ export function InboxPage({ storeName }: { storeName: string }) {
         return (
             <>
                 <PageHeader
-                    eyebrow="Google Places reviews"
+                    eyebrow="Customer reviews"
                     title="리뷰"
-                    description="Google Places API로 최신 5개 리뷰를 불러왔어요. 전체 리뷰는 Google에서 확인할 수 있습니다."
+                    description="고객 리뷰를 확인하고 AI로 답글 초안을 작성하세요."
                 />
                 <p className="mt-8 text-center text-sm text-slate-500">리뷰를 불러오는 중…</p>
             </>
@@ -42,9 +42,9 @@ export function InboxPage({ storeName }: { storeName: string }) {
         return (
             <>
                 <PageHeader
-                    eyebrow="Google Places reviews"
+                    eyebrow="Customer reviews"
                     title="리뷰"
-                    description="Google Places API로 최신 5개 리뷰를 불러왔어요. 전체 리뷰는 Google에서 확인할 수 있습니다."
+                    description="고객 리뷰를 확인하고 AI로 답글 초안을 작성하세요."
                 />
                 <p className="mt-8 text-center text-sm text-[#d6503b]">{fetchReviewsMutation.error}</p>
             </>

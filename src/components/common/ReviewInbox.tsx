@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ArrowRightIcon, BotIcon, CheckCheckIcon, StarIcon } from "lucide-react"
+import { BotIcon, CheckCheckIcon, StarIcon } from "lucide-react"
 import { useReviews } from "../../store"
 import { getAccent, getInitials } from "../../utils/storeUtils"
 import { getRelativeTime } from "../../utils/timeUtils"
@@ -18,7 +18,7 @@ export function ReviewInbox() {
                 <div>
                     <div className="flex items-center gap-2">
                         <h2 id="reviews-heading" className="text-base font-bold text-[#172033]">
-                            최근 Google 리뷰
+                            최근 리뷰
                         </h2>
                         {reviews.length > 0 && (
                             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ffede9] px-1 text-[10px] font-extrabold text-[#d6503b]">
@@ -27,7 +27,7 @@ export function ReviewInbox() {
                         )}
                     </div>
                     <p className="mt-0.5 text-xs text-slate-500">
-                        최신 동기화된 5개 리뷰 중 답글이 필요한 내용을 확인하세요.
+                        최신 동기화된 리뷰 중 답글이 필요한 내용을 확인하세요.
                     </p>
                 </div>
                 <div className="flex rounded-lg bg-[#f3f0e9] p-1" role="tablist" aria-label="리뷰 보기">
@@ -111,14 +111,6 @@ export function ReviewInbox() {
                     )
                 })}
             </div>
-            <a
-                href="https://www.google.com/maps"
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-full items-center justify-center gap-1.5 border-t border-[#eeeae2] px-5 py-3.5 text-xs font-bold text-[#29425b] transition-colors hover:bg-[#faf9f6]"
-            >
-                Google에서 전체 리뷰 보기 <ArrowRightIcon size={14} aria-hidden="true" />
-            </a>
         </section>
     )
 }

@@ -1,5 +1,5 @@
-import { useEffect, useState, useId } from "react"
-import { useGenerateContentDraftMutation, usePublishContentMutation } from "../../../hooks/useContentMutations"
+import { useEffect, useState, useId, useRef } from "react"
+import { useGenerateContentDraftMutation, usePublishContentMutation, useUploadImagesMutation } from "../../../hooks/useContentMutations"
 import {
     CheckIcon,
     ImagePlusIcon,
@@ -44,9 +44,11 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
     const [title, setTitle] = useState("")
     const [body, setBody] = useState("")
     const [selectedChannels, setSelectedChannels] = useState<PlatformId[]>([])
-    const [imageAdded, setImageAdded] = useState(false)
+    const [imageUrls, setImageUrls] = useState<string[]>([])
     const [published, setPublished] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const generateDraftMutation = useGenerateContentDraftMutation()
+    const uploadImagesMutation = useUploadImagesMutation()
     const publishMutation = usePublishContentMutation()
     const channels = integrations.flatMap((id) => {
         const display = PLATFORM_DISPLAY[id]
@@ -69,7 +71,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
             setIntent("")
             setTitle("")
             setBody("")
-            setImageAdded(false)
+            setImageUrls([])
         }
     }, [open])
 
@@ -89,7 +91,7 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
     }
     const publish = async () => {
         if (!body.trim() || selectedChannels.length === 0) return
-        const ok = await publishMutation.run({ storeId: store.id, title, body, channels: selectedChannels })
+        const ok = await publishMutation.run({ storeId: store.id, title, body, channels: selectedChannels, imageUrls: imageUrls.length > 0 ? imageUrls : undefined })
         if (ok) {
             setPublished(true)
             window.setTimeout(onClose, 1500)
@@ -196,14 +198,31 @@ export function ComposeModal({ open, onClose, store }: ComposeModalProps) {
                         </label>
 
                         <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={async (event) => {
+                                    const files = Array.from(event.target.files ?? [])
+                                    if (files.length === 0) return
+                                    const result = await uploadImagesMutation.run(store.id, files)
+                                    if (result) setImageUrls(result.imageUrls)
+                                }}
+                            />
                             <button
                                 type="button"
-                                onClick={() => setImageAdded(true)}
-                                className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold ${imageAdded ? "border-[#91d9c4] bg-[#eafaf5] text-[#168165]" : "border-[#ded9cf] text-[#42526e] hover:bg-[#f7f5f0]"}`}
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploadImagesMutation.loading}
+                                className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold ${imageUrls.length > 0 ? "border-[#91d9c4] bg-[#eafaf5] text-[#168165]" : "border-[#ded9cf] text-[#42526e] hover:bg-[#f7f5f0]"} disabled:opacity-60`}
                             >
-                                {imageAdded ? <CheckIcon size={15} /> : <ImagePlusIcon size={15} />}
-                                {imageAdded ? "사진 1장 추가됨" : "사진 추가"}
+                                {imageUrls.length > 0 ? <CheckIcon size={15} /> : <ImagePlusIcon size={15} />}
+                                {uploadImagesMutation.loading ? "업로드 중…" : imageUrls.length > 0 ? `사진 ${imageUrls.length}장 추가됨` : "사진 추가"}
                             </button>
+                            {uploadImagesMutation.error && (
+                                <p className="text-[11px] font-medium text-[#d6503b]">{uploadImagesMutation.error}</p>
+                            )}
                         </div>
 
                         <fieldset className="mt-5 rounded-xl bg-[#f7f5f0] p-4">

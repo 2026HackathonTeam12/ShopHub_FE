@@ -223,11 +223,38 @@ export async function generateContentDraft(req: GenerateContentRequest): Promise
     })
 }
 
+export interface ImageUploadResponse {
+    imageUrls: string[]
+}
+
+export async function uploadContentImages(storeId: string, files: File[]): Promise<ImageUploadResponse> {
+    const formData = new FormData()
+    for (const file of files) {
+        formData.append("images", file)
+    }
+    const headers: Record<string, string> = {}
+    if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`
+    }
+    const response = await fetch(`${BASE_URL}/v1/stores/${storeId}/contents/images`, {
+        method: "POST",
+        headers,
+        body: formData,
+    })
+    if (!response.ok) {
+        if (response.status === 401) throw new UnauthorizedError()
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body.message ?? `${response.status} ${response.statusText}`)
+    }
+    return response.json() as Promise<ImageUploadResponse>
+}
+
 export interface PublishContentRequest {
     storeId: string
     title: string
     body: string
     channels: string[]
+    imageUrls?: string[]
 }
 
 export interface ContentItem {
@@ -238,6 +265,7 @@ export interface ContentItem {
     channels: string[]
     status: string
     updatedAt: string
+    platforms: { platform: string; status: "PENDING" | "SUCCESS" | "FAILED" }[]
 }
 
 export async function publishContent(req: PublishContentRequest): Promise<ContentItem> {
